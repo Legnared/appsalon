@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'usuario2/app-salon_php_mvc',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => NULL,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => 'e512cfe9084104ada97ceca83ab9040b24af7ef4',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'phpmailer/phpmailer' => array(
-            'pretty_version' => 'v6.6.4',
-            'version' => '6.6.4.0',
-            'reference' => 'a94fdebaea6bd17f51be0c2373ab80d3d681269b',
+            'pretty_version' => 'v6.9.1',
+            'version' => '6.9.1.0',
+            'reference' => '039de174cd9c17a8389754d3b877a2ed22743e18',
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpmailer/phpmailer',
             'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'usuario2/app-salon_php_mvc' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => NULL,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'e512cfe9084104ada97ceca83ab9040b24af7ef4',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

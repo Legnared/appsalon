@@ -97,87 +97,100 @@ class LoginController {
     public static function recuperar(Router $router) {
         $alertas = [];
         $error = false;
-
-        $token = s($_GET['token']);
-
-        // Buscar usuario por su token
-        $usuario = Usuario::where('token', $token);
-
-        if(empty($usuario)) {
-            Usuario::setAlerta('error', 'Token No Válido');
+    
+        // Verificar si se recibe el token
+        if (!isset($_GET['token']) || empty($_GET['token'])) {
+            Usuario::setAlerta('error', 'Token no recibido o está vacío');
             $error = true;
+        } else {
+            $token = s($_GET['token']);
+    
+            // Buscar usuario por su token
+            $usuario = Usuario::where('token', $token);
+    
+            if (empty($usuario)) {
+                Usuario::setAlerta('error', 'Token No Válido');
+                $error = true;
+            }
         }
-
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Leer el nuevo password y guardarlo
-
             $password = new Usuario($_POST);
             $alertas = $password->validarPassword();
-
-            if(empty($alertas)) {
-                $usuario->password = null;
-
+    
+            if (empty($alertas)) {
+                $usuario->password = null; // Desencriptar el password antes de guardarlo
                 $usuario->password = $password->password;
                 $usuario->hashPassword();
                 $usuario->token = null;
-
+    
                 $resultado = $usuario->guardar();
-                if($resultado) {
+                if ($resultado) {
                     header('Location: /');
+                    exit;
+                } else {
+                    Usuario::setAlerta('error', 'Error al guardar el nuevo password');
+                    $error = true;
                 }
             }
         }
-
+    
         $alertas = Usuario::getAlertas();
-        $router->render('auth/recuperar-password', [
-            'alertas' => $alertas, 
+        $router->render('auth/reestablecer', [
+            'alertas' => $alertas,
             'error' => $error
         ]);
     }
+    
 
     public static function crear(Router $router) {
         $usuario = new Usuario;
-
+    
         // Alertas vacias
         $alertas = [];
-        if($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $usuario->sincronizar($_POST);
             $alertas = $usuario->validarNuevaCuenta();
-
-            // Revisar que alerta este vacio
-            if(empty($alertas)) {
-                // Verificar que el usuario no este registrado
+    
+            // Revisar que alerta esté vacía
+            if (empty($alertas)) {
+                // Verificar que el usuario no esté registrado
                 $resultado = $usuario->existeUsuario();
-
-                if($resultado->num_rows) {
+    
+                if ($resultado->num_rows) {
                     $alertas = Usuario::getAlertas();
                 } else {
                     // Hashear el Password
                     $usuario->hashPassword();
-
+    
                     // Generar un Token único
                     $usuario->crearToken();
-
-                    // Enviar el Email
-                    $email = new Email($usuario->nombre, $usuario->email, $usuario->token);
-                    $email->enviarConfirmacion();
-
-                    // Crear el usuario
-                    $resultado = $usuario->guardar();
-                    // debuguear($usuario);
-                    if($resultado) {
-                        header('Location: /mensaje');
+    
+                    // Validar el Email
+                    if (!filter_var($usuario->email, FILTER_VALIDATE_EMAIL)) {
+                        Usuario::setAlerta('error', 'Dirección de correo electrónico inválida');
+                    } else {
+                        // Enviar el Email
+                        $email = new Email($usuario->email, $usuario->nombre, $usuario->token);
+                        $email->enviarConfirmacion();
+    
+                        // Crear el usuario
+                        $resultado = $usuario->guardar();
+                        if ($resultado) {
+                            header('Location: /mensaje');
+                        }
                     }
                 }
             }
         }
-        
+    
         $router->render('auth/crear-cuenta', [
             'usuario' => $usuario,
             'alertas' => $alertas
         ]);
     }
-
+    
     public static function mensaje(Router $router) {
         $router->render('auth/mensaje');
     }

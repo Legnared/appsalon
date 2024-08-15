@@ -16,22 +16,22 @@ class Router
     }
 
     public function comprobarRutas() {
-        $currentUrl = $_SERVER['REQUEST_URI'] === '' ? '/' : $_SERVER['REQUEST_URI'];
+        $currentUrl = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $method = $_SERVER['REQUEST_METHOD'];
-
+    
         if ($method === 'GET') {
             $fn = $this->getRoutes[$currentUrl] ?? null;
         } else {
             $fn = $this->postRoutes[$currentUrl] ?? null;
         }
-
-        if ( $fn ) {
-            // Call user fn va a llamar una función cuando no sabemos cual sera
-            call_user_func($fn, $this); // This es para pasar argumentos
+    
+        if ($fn) {
+            call_user_func($fn, $this);
         } else {
             echo "Página No Encontrada o Ruta no válida";
         }
     }
+    
 
     public function render($view, $datos = []) {
         // Leer lo que le pasamos  a la vista

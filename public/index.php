@@ -7,7 +7,9 @@ use Controllers\APIController;
 use Controllers\CitaController;
 use Controllers\LoginController;
 use Controllers\ServicioController;
+
 use MVC\Router;
+
 $router = new Router();
 
 // Iniciar Sesión
@@ -18,8 +20,9 @@ $router->get('/logout', [LoginController::class, 'logout']);
 // Recuperar Password
 $router->get('/olvide', [LoginController::class, 'olvide']);
 $router->post('/olvide', [LoginController::class, 'olvide']);
-$router->get('/recuperar', [LoginController::class, 'recuperar']);
-$router->post('/recuperar', [LoginController::class, 'recuperar']);
+
+$router->get('/reestablecer', [LoginController::class, 'recuperar']);
+$router->post('/reestablecer', [LoginController::class, 'recuperar']);
 
 // Crear Cuenta
 $router->get('/crear-cuenta', [LoginController::class, 'crear']);
