@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Cita extends Model
+{
+    protected $table = 'citas';
+
+    public $timestamps = false;
+
+    protected $fillable = [
+        'fecha',
+        'hora',
+        'usuarioId',
+    ];
+
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'usuarioId');
+    }
+
+    public function servicios(): BelongsToMany
+    {
+        return $this->belongsToMany(Servicio::class, 'citasServicios', 'citaId', 'servicioId');
+    }
+}
