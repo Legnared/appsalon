@@ -5,6 +5,7 @@ use App\Http\Controllers\APIController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarberoController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PagoWebhookController;
 use App\Http\Controllers\ServicioController;
@@ -61,4 +62,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/barberos/actualizar', [BarberoController::class, 'showActualizar'])->name('barberos.actualizar');
     Route::post('/barberos/actualizar', [BarberoController::class, 'actualizar'])->name('barberos.update');
     Route::post('/barberos/toggle-activo', [BarberoController::class, 'toggleActivo'])->name('barberos.toggle');
+
+    // Cartera de Clientes y Prospectos (Spec 009 - Fase 2)
+    Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+    Route::get('/clientes/crear', [ClienteController::class, 'showCrear'])->name('clientes.crear');
+    Route::post('/clientes/crear', [ClienteController::class, 'crear'])->name('clientes.store');
+    Route::get('/clientes/actualizar', [ClienteController::class, 'showActualizar'])->name('clientes.actualizar');
+    Route::post('/clientes/actualizar', [ClienteController::class, 'actualizar'])->name('clientes.update');
 });

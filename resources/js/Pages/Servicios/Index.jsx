@@ -52,6 +52,25 @@ export default function ServiciosIndex({ servicios = [] }) {
             <Barra />
             <Alertas />
 
+            <div className="resumen-kpi-grid">
+                <div className="kpi-card">
+                    <span className="kpi-label">Servicios activos</span>
+                    <strong className="kpi-valor">
+                        {servicios.filter((s) => s.activo !== false).length} / {servicios.length}
+                    </strong>
+                </div>
+                <div className="kpi-card">
+                    <span className="kpi-label">Agregar al catálogo</span>
+                    <Link
+                        href={ServicioController.showCrear.url()}
+                        className="boton"
+                        style={{ margin: '0.6rem 0 0', minHeight: '4rem', padding: '0.8rem 1.4rem', fontSize: '1.4rem' }}
+                    >
+                        + Nuevo Servicio
+                    </Link>
+                </div>
+            </div>
+
             <ul className="servicios">
                 {servicios.map((servicio) => {
                     const estaActivo = servicio.activo !== false;

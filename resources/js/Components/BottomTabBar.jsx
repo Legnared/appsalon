@@ -3,6 +3,7 @@ import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
 import BarberoController from '@/actions/App/Http/Controllers/BarberoController';
 import CitaController from '@/actions/App/Http/Controllers/CitaController';
+import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
 export default function BottomTabBar() {
@@ -42,6 +43,17 @@ export default function BottomTabBar() {
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
                     <span>Barberos</span>
+                </Link>
+
+                <Link
+                    href={ClienteController.index.url()}
+                    className={`bottom-tab-item ${isPath('/clientes') ? 'activo' : ''}`}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>Clientes</span>
                 </Link>
 
                 <Link

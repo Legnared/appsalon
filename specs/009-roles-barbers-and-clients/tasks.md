@@ -7,8 +7,8 @@
 - [x] **T009.4:** Crear `Components/BarberoFormulario.jsx`, `Pages/Barberos/Index.jsx`, `Crear.jsx` y `Actualizar.jsx` con foto, especialidad y estado activo.
 - [x] **T009.5:** Agregar navegación a **Barberos** en `Barra.jsx` y `BottomTabBar.jsx` con Wayfinder, compilar con Vite y validar PHP.
 
-### Fase 2: Cartera de Clientes y Prospectos (Próxima iteración)
-- [ ] **T009.6:** Implementar `ClienteController` y vistas `Pages/Clientes/*` (filtro por barbero, buscador, alta de clientes/prospectos e historial).
+### Fase 2: Cartera de Clientes y Prospectos
+- [x] **T009.6:** Implementar `ClienteController` y vistas `Pages/Clientes/*` (filtro por barbero, buscador, alta de clientes/prospectos e historial).
 
 ### Fase 3: Portal del Barbero y Selección de Barbero en Cita (Próxima iteración)
 - [ ] **T009.7:** Habilitar acceso del rol `barbero` a su propia agenda y clientes, y selector de barbero en `/cita`.
