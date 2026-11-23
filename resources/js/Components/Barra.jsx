@@ -1,7 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
+import AuthController from '@/actions/App/Http/Controllers/AuthController';
 
 export default function Barra({
-    logoutUrl = '/logout',
     adminUrl = '/admin',
     serviciosUrl = '/servicios',
     crearServicioUrl = '/servicios/crear',
@@ -13,7 +13,13 @@ export default function Barra({
         <>
             <div className="barra">
                 <p>Hola: {usuario?.nombreCompleto ?? ''}</p>
-                <Link className="boton-cerrar-sesion" href={logoutUrl} method="post" as="button" type="button">
+                <Link
+                    className="boton-cerrar-sesion"
+                    href={AuthController.logout.url()}
+                    method="post"
+                    as="button"
+                    type="button"
+                >
                     Cerrar Sesión
                 </Link>
             </div>
