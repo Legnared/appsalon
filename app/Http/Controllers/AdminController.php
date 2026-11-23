@@ -24,7 +24,7 @@ class AdminController extends Controller
             abort(404);
         }
 
-        $citas = Cita::with(['usuario', 'servicios'])
+        $citas = Cita::with(['usuario', 'servicios', 'pago'])
             ->where('fecha', $fecha)
             ->orderBy('hora')
             ->get()
@@ -35,6 +35,8 @@ class AdminController extends Controller
                     'precio' => (float) $s->precio,
                 ])->values();
 
+                $pago = $cita->pago;
+
                 return [
                     'id' => $cita->id,
                     'hora' => $cita->hora,
@@ -43,6 +45,19 @@ class AdminController extends Controller
                     'telefono' => $cita->usuario?->telefono ?? '',
                     'servicios' => $servicios,
                     'total' => $servicios->sum('precio'),
+                    'pago' => $pago ? [
+                        'id' => $pago->id,
+                        'metodo' => $pago->metodo,
+                        'estado' => $pago->estado,
+                        'monto' => (float) $pago->monto,
+                        'moneda' => $pago->moneda,
+                        'gateway' => $pago->gateway,
+                        'referencia_bancaria' => $pago->referencia_bancaria,
+                        'codigo_autorizacion' => $pago->codigo_autorizacion,
+                        'ultimos_4' => $pago->ultimos_4,
+                        'marca_tarjeta' => $pago->marca_tarjeta,
+                        'terminal_id' => $pago->terminal_id,
+                    ] : null,
                 ];
             })
             ->values();

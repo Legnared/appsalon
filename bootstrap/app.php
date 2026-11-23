@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->redirectGuestsTo('/');
 
+        $middleware->validateCsrfTokens(except: [
+            'api/webhooks/pagos/*',
+        ]);
+
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);

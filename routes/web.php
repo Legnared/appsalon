@@ -4,6 +4,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\APIController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CitaController;
+use App\Http\Controllers\PagoController;
+use App\Http\Controllers\PagoWebhookController;
 use App\Http\Controllers\ServicioController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,7 +35,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/servicios', [APIController::class, 'index'])->name('api.servicios.index');
     Route::post('/api/citas', [APIController::class, 'guardar'])->name('api.citas.guardar');
     Route::post('/api/eliminar', [APIController::class, 'eliminar'])->middleware('admin')->name('api.citas.eliminar');
+    Route::post('/api/pagos/{pago}/terminal', [PagoController::class, 'cobrarEnTerminal'])->middleware('admin')->name('api.pagos.terminal');
 });
+
+// Webhook Bancario / Terminal POS (multi-gateway)
+Route::post('/api/webhooks/pagos/{gateway}', [PagoWebhookController::class, 'handle'])->name('api.pagos.webhook');
 
 // Panel de Administración y CRUD de Servicios
 Route::middleware(['auth', 'admin'])->group(function () {

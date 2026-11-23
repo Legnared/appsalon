@@ -4,6 +4,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
 import BarberDatePicker from '@/Components/BarberDatePicker';
+import MetodoPagoSelector from '@/Components/MetodoPagoSelector';
 import APIController from '@/actions/App/Http/Controllers/APIController';
 
 const PASO_INICIAL = 1;
@@ -34,6 +35,14 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
     const [hora, setHora] = useState('');
     const [alertaFormulario, setAlertaFormulario] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    const [metodoPago, setMetodoPago] = useState('tarjeta_online');
+    const [terminalModo, setTerminalModo] = useState('en_sucursal');
+    const [tarjeta, setTarjeta] = useState({
+        titular: usuario?.nombreCompleto ?? '',
+        numero: '',
+        expiracion: '',
+        cvv: '',
+    });
 
     const timerRef = useRef(null);
 
@@ -109,8 +118,27 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
         );
     }, [usuario, fecha, hora, serviciosSeleccionados]);
 
+    const totalServicios = useMemo(() => {
+        return serviciosSeleccionados.reduce((acc, s) => acc + Number(s.precio || 0), 0);
+    }, [serviciosSeleccionados]);
+
     const reservarCita = async () => {
         if (!datosCompletos || guardando) return;
+
+        if (metodoPago === 'tarjeta_online') {
+            const digitos = tarjeta.numero.replace(/\D/g, '');
+            if (!tarjeta.titular.trim() || digitos.length < 15 || tarjeta.expiracion.length < 5 || tarjeta.cvv.length < 3) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos de tarjeta incompletos',
+                    text: 'Verifica el titular, número de tarjeta, expiración (MM/AA) y CVV.',
+                    background: '#1f1b17',
+                    color: '#f5efe6',
+                    confirmButtonColor: '#d4a259',
+                });
+                return;
+            }
+        }
 
         setGuardando(true);
         try {
@@ -120,28 +148,55 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                 usuarioId: usuario.id,
                 nombre: usuario.nombreCompleto,
                 servicios: serviciosSeleccionados.map((s) => s.id),
+                metodo_pago: metodoPago,
+                terminal_modo: terminalModo,
+                ...(metodoPago === 'tarjeta_online'
+                    ? {
+                          tarjeta_titular: tarjeta.titular,
+                          tarjeta_numero: tarjeta.numero,
+                          tarjeta_expiracion: tarjeta.expiracion,
+                          tarjeta_cvv: tarjeta.cvv,
+                      }
+                    : {}),
             };
 
             const { data } = await axios.post(APIController.guardar.url(), payload);
 
             if (data?.resultado) {
+                const pago = data.pago;
+                const detallePago =
+                    pago?.estado === 'pagado'
+                        ? `Pago aprobado · Autorización #${pago.codigo_autorizacion} (${pago.marca_tarjeta} •••• ${pago.ultimos_4})`
+                        : `Reserva confirmada · Pago pendiente en Terminal POS (Ref. ${pago?.referencia_bancaria ?? 'POS'})`;
+
                 await Swal.fire({
                     icon: 'success',
                     title: 'Cita Creada',
-                    text: 'Tu cita fue creada correctamente',
+                    text: `Tu cita #${data.id} fue creada correctamente. ${detallePago}`,
                     confirmButtonText: 'OK',
+                    background: '#1f1b17',
+                    color: '#f5efe6',
+                    confirmButtonColor: '#d4a259',
                 });
 
                 setServiciosSeleccionados([]);
                 setFecha('');
                 setHora('');
+                setTarjeta((prev) => ({ ...prev, numero: '', expiracion: '', cvv: '' }));
                 setPaso(PASO_INICIAL);
             }
         } catch (error) {
+            const mensaje =
+                error?.response?.data?.mensaje ||
+                error?.response?.data?.message ||
+                'Hubo un error al guardar la cita o procesar el pago';
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
-                text: 'Hubo un error al guardar la cita',
+                title: 'Error en la reserva',
+                text: mensaje,
+                background: '#1f1b17',
+                color: '#f5efe6',
+                confirmButtonColor: '#b83232',
             });
         } finally {
             setGuardando(false);
@@ -312,13 +367,27 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                                 <span>Hora:</span> {hora} Horas
                             </p>
 
+                            <MetodoPagoSelector
+                                total={totalServicios}
+                                metodoPago={metodoPago}
+                                setMetodoPago={setMetodoPago}
+                                tarjeta={tarjeta}
+                                setTarjeta={setTarjeta}
+                                terminalModo={terminalModo}
+                                setTerminalModo={setTerminalModo}
+                            />
+
                             <button
                                 type="button"
                                 className="boton"
                                 onClick={reservarCita}
                                 disabled={guardando}
                             >
-                                {guardando ? 'Reservando...' : 'Reservar Cita'}
+                                {guardando
+                                    ? 'Procesando...'
+                                    : metodoPago === 'tarjeta_online'
+                                      ? `Pagar $${totalServicios.toFixed(2)} y Reservar Cita`
+                                      : 'Reservar Cita (Pago en Terminal)'}
                             </button>
                         </>
                     )}

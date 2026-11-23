@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
 import BarberDatePicker from '@/Components/BarberDatePicker';
 import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import APIController from '@/actions/App/Http/Controllers/APIController';
+import PagoController from '@/actions/App/Http/Controllers/PagoController';
 
 function sumarDias(fechaStr, dias) {
     const [y, m, d] = fechaStr.split('-').map(Number);
@@ -60,6 +63,13 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
         0
     );
 
+    const totalCobrado = citasFiltradas.reduce((acc, cita) => {
+        if (cita.pago?.estado === 'pagado') {
+            return acc + Number(cita.pago.monto || cita.total || 0);
+        }
+        return acc;
+    }, 0);
+
     const navegarAFecha = (nuevaFecha) => {
         if (!nuevaFecha || nuevaFecha === fecha) return;
         router.get(
@@ -74,6 +84,62 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                 onFinish: () => setCargandoFecha(false),
             }
         );
+    };
+
+    const handleCobrarTerminal = async (cita) => {
+        if (!cita.pago) return;
+
+        const { value: formValues, isConfirmed } = await Swal.fire({
+            title: `Cobrar Cita #${cita.id} en Terminal POS`,
+            html: `
+                <p style="font-size:1.4rem;color:#b9afa1;margin-bottom:1.2rem;">
+                    Monto: <strong style="color:#d4a259;">$${Number(cita.total).toFixed(2)} MXN</strong>
+                </p>
+                <input id="swal-auth" class="swal2-input" placeholder="Código de autorización (opcional en sandbox)" />
+                <input id="swal-last4" class="swal2-input" maxlength="4" placeholder="Últimos 4 dígitos de tarjeta (opcional)" />
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Confirmar Cobro POS',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d4a259',
+            cancelButtonColor: '#28221c',
+            background: '#1f1b17',
+            color: '#f5efe6',
+            preConfirm: () => ({
+                codigo_autorizacion: document.getElementById('swal-auth')?.value || '',
+                ultimos_4: document.getElementById('swal-last4')?.value || '',
+            }),
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            const { data } = await axios.post(
+                PagoController.cobrarEnTerminal.url({ pago: cita.pago.id }),
+                formValues
+            );
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Cobro confirmado',
+                text: `Autorización #${data?.pago?.codigo_autorizacion ?? 'OK'} registrada en Terminal POS.`,
+                background: '#1f1b17',
+                color: '#f5efe6',
+                confirmButtonColor: '#d4a259',
+            });
+
+            router.reload({ only: ['citas'] });
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error en Terminal POS',
+                text: error?.response?.data?.mensaje || 'No se pudo confirmar el cobro en terminal',
+                background: '#1f1b17',
+                color: '#f5efe6',
+                confirmButtonColor: '#b83232',
+            });
+        }
     };
 
     const handleEliminar = (e, id) => {
@@ -94,7 +160,7 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
             <Head title="Panel de Administración" />
 
             <h1 className="nombre-pagina">Panel de Administración</h1>
-            <p className="descripcion-pagina">Agenda diaria y control de citas de la barbería</p>
+            <p className="descripcion-pagina">Agenda diaria, pagos y control de citas de la barbería</p>
 
             <Barra />
 
@@ -170,8 +236,10 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                         <strong className="kpi-valor">{citasFiltradas.length}</strong>
                     </div>
                     <div className="kpi-card">
-                        <span className="kpi-label">Estimado del día</span>
-                        <strong className="kpi-valor">${totalDia.toFixed(2)}</strong>
+                        <span className="kpi-label">Cobrado / Estimado</span>
+                        <strong className="kpi-valor">
+                            ${totalCobrado.toFixed(2)} / ${totalDia.toFixed(2)}
+                        </strong>
                     </div>
                 </div>
 
@@ -191,45 +259,99 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                 ) : (
                     <div id="citas-admin">
                         <ul className="citas">
-                            {citasFiltradas.map((cita) => (
-                                <li key={cita.id}>
-                                    <div className="cita-header">
-                                        <span className="cita-badge-hora">{cita.hora} hrs</span>
-                                        <span className="cita-id">Folio #{cita.id}</span>
-                                    </div>
+                            {citasFiltradas.map((cita) => {
+                                const pago = cita.pago;
+                                const esPendientePos =
+                                    pago && pago.estado !== 'pagado';
 
-                                    <p>
-                                        Cliente: <span>{cita.cliente}</span>
-                                    </p>
-                                    <p>
-                                        Email: <span>{cita.email}</span>
-                                    </p>
-                                    <p>
-                                        Teléfono: <span>{cita.telefono || 'Sin registro'}</span>
-                                    </p>
+                                return (
+                                    <li key={cita.id}>
+                                        <div className="cita-header">
+                                            <span className="cita-badge-hora">{cita.hora} hrs</span>
+                                            <span className="cita-id">Folio #{cita.id}</span>
+                                        </div>
 
-                                    <h3>Servicios</h3>
-                                    {cita.servicios.map((servicio) => (
-                                        <p key={`${cita.id}-${servicio.id}`} className="servicio">
-                                            <span>{servicio.nombre}</span>
-                                            <strong>${Number(servicio.precio).toFixed(2)}</strong>
+                                        <p>
+                                            Cliente: <span>{cita.cliente}</span>
                                         </p>
-                                    ))}
+                                        <p>
+                                            Email: <span>{cita.email}</span>
+                                        </p>
+                                        <p>
+                                            Teléfono: <span>{cita.telefono || 'Sin registro'}</span>
+                                        </p>
 
-                                    <p className="total">
-                                        Total: <span>$ {Number(cita.total).toFixed(2)}</span>
-                                    </p>
+                                        <h3>Servicios</h3>
+                                        {cita.servicios.map((servicio) => (
+                                            <p key={`${cita.id}-${servicio.id}`} className="servicio">
+                                                <span>{servicio.nombre}</span>
+                                                <strong>${Number(servicio.precio).toFixed(2)}</strong>
+                                            </p>
+                                        ))}
 
-                                    <form onSubmit={(e) => handleEliminar(e, cita.id)}>
-                                        <input type="hidden" name="id" value={cita.id} />
-                                        <input
-                                            type="submit"
-                                            className="boton-eliminar"
-                                            value="Eliminar"
-                                        />
-                                    </form>
-                                </li>
-                            ))}
+                                        <p className="total">
+                                            Total: <span>$ {Number(cita.total).toFixed(2)}</span>
+                                        </p>
+
+                                        {pago && (
+                                            <div className="cita-pago-box">
+                                                <div className="cita-pago-top">
+                                                    <span className="pago-meta">
+                                                        Método:{' '}
+                                                        <strong>
+                                                            {pago.metodo === 'tarjeta_online'
+                                                                ? 'Tarjeta en Línea'
+                                                                : 'Terminal POS'}
+                                                        </strong>
+                                                    </span>
+                                                    <span className={`pago-badge ${pago.estado}`}>
+                                                        {pago.estado === 'pagado'
+                                                            ? 'PAGADO'
+                                                            : pago.estado === 'fallido'
+                                                              ? 'FALLIDO'
+                                                              : 'PENDIENTE EN TERMINAL'}
+                                                    </span>
+                                                </div>
+
+                                                {pago.estado === 'pagado' ? (
+                                                    <p className="pago-meta">
+                                                        Autorización: #{pago.codigo_autorizacion || 'N/A'}
+                                                        {pago.ultimos_4
+                                                            ? ` · ${pago.marca_tarjeta || 'TARJETA'} •••• ${pago.ultimos_4}`
+                                                            : ''}
+                                                    </p>
+                                                ) : (
+                                                    <p className="pago-meta">
+                                                        Ref: {pago.referencia_bancaria || 'Pendiente'} · Terminal:{' '}
+                                                        {pago.terminal_id || 'POS-BARBER-01'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="cita-acciones-footer">
+                                            {esPendientePos && (
+                                                <button
+                                                    type="button"
+                                                    className="boton"
+                                                    onClick={() => handleCobrarTerminal(cita)}
+                                                >
+                                                    Cobrar en Terminal POS
+                                                </button>
+                                            )}
+
+                                            <form onSubmit={(e) => handleEliminar(e, cita.id)}>
+                                                <input type="hidden" name="id" value={cita.id} />
+                                                <input
+                                                    type="submit"
+                                                    className="boton-eliminar"
+                                                    value="Eliminar"
+                                                />
+                                            </form>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 )}
