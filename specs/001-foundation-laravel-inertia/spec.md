@@ -29,10 +29,10 @@ Transformar el directorio raíz `c:\Apache24\htdocs\appsalon` desde el proyecto 
 - Entradas de Vite: `['resources/scss/app.scss', 'resources/js/app.jsx']`.
 - Configurar generación automática de acciones y rutas tipadas de Wayfinder en `resources/js/actions` y `resources/js/routes`.
 
-### R4. Reciclaje 1:1 de Estilos SASS (`src/scss` → `resources/scss`) e Imágenes
+### R4. Reciclaje 1:1 y Refinamiento UI de Estilos SASS (`src/scss` → `resources/scss`) e Imágenes
 - Copiar `src/scss/` a `resources/scss/` manteniendo `base/`, `layout/` y `componentes/`.
 - Copiar `src/img/1.jpg` y `public/build/img/icono.png` (y `1.webp`) a `public/img/`.
-- Ajustar en `resources/scss/layout/_UI.scss` la referencia `background-image: url(/img/1.jpg);` para que resuelva limpiamente desde `public/img/1.jpg`.
+- En `resources/scss/layout/_UI.scss`, usar `/img/1.webp` (con fallback `/img/1.jpg`) para `.imagen`, asegurar que `#app` de Inertia ocupe `min-height: 100vh` para que `.contenedor-app` despliegue el split-screen completo en escritorio/tablet, y aplicar refinamientos visuales modernos (bordes redondeados, estados `:focus` en `$azul`, sombras sutiles, overlay elegante sobre la imagen lateral, scrollbar discreto y micro-interacciones suaves) preservando estrictamente la paleta (`$negro`, `$azul`, `$verde`, `$rojo`, `$blanco`), la tipografía `Poppins` y todas las clases CSS del proyecto original.
 
 ### R5. Layout Principal y Componentes Base Compartidos
 - **`resources/views/app.blade.php`:**

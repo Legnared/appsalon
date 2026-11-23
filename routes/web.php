@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\APIController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CitaController;
+use App\Http\Controllers\ServicioController;
 use Illuminate\Support\Facades\Route;
 
 // Iniciar Sesión
@@ -20,3 +24,25 @@ Route::get('/crear-cuenta', [AuthController::class, 'showCrear'])->name('registe
 Route::post('/crear-cuenta', [AuthController::class, 'crear'])->name('register.store');
 Route::get('/mensaje', [AuthController::class, 'mensaje'])->name('register.message');
 Route::get('/confirmar-cuenta', [AuthController::class, 'confirmar'])->name('register.confirm');
+
+// Área Privada — Citas del Cliente
+Route::middleware('auth')->group(function () {
+    Route::get('/cita', [CitaController::class, 'index'])->name('cita.index');
+
+    // API de Citas y Servicios
+    Route::get('/api/servicios', [APIController::class, 'index'])->name('api.servicios.index');
+    Route::post('/api/citas', [APIController::class, 'guardar'])->name('api.citas.guardar');
+    Route::post('/api/eliminar', [APIController::class, 'eliminar'])->middleware('admin')->name('api.citas.eliminar');
+});
+
+// Panel de Administración y CRUD de Servicios
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+
+    Route::get('/servicios', [ServicioController::class, 'index'])->name('servicios.index');
+    Route::get('/servicios/crear', [ServicioController::class, 'showCrear'])->name('servicios.crear');
+    Route::post('/servicios/crear', [ServicioController::class, 'crear'])->name('servicios.store');
+    Route::get('/servicios/actualizar', [ServicioController::class, 'showActualizar'])->name('servicios.actualizar');
+    Route::post('/servicios/actualizar', [ServicioController::class, 'actualizar'])->name('servicios.update');
+    Route::post('/servicios/eliminar', [ServicioController::class, 'eliminar'])->name('servicios.eliminar');
+});

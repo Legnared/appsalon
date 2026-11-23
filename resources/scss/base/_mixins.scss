@@ -17,34 +17,44 @@
     }
 }
 
-
 @mixin boton($bgColor, $colorTexto) {
     background-color: $bgColor;
-    padding: 1.5rem 4rem;
+    padding: 1.4rem 3.2rem;
     color: $colorTexto;
-    margin-top: 2rem;
-    font-size: 2rem;
-    font-weight: 400;
-    display: inline-block;
+    font-size: 1.8rem;
     font-weight: 700;
     border: none;
-    transition-property: background-color;
-    transition-duration: .3s;
+    border-radius: 0.9rem;
+    transition: background-color 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
     text-align: center;
     display: block;
     width: 100%;
-    margin: 5rem 0;
+    margin: 3.5rem 0;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 
     @include tablet {
         width: auto;
     }
+
     &:hover {
-        background-color: darken( $bgColor, 10% );
+        background-color: darken($bgColor, 8%);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36);
         cursor: pointer;
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        transform: none;
     }
 }
 
-@mixin grid($columnas, $espaciado ) {
+@mixin grid($columnas, $espaciado) {
     display: grid;
     gap: $espaciado;
     grid-template-columns: repeat($columnas, 1fr);

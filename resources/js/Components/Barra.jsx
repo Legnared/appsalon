@@ -1,11 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
+import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
+import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
-export default function Barra({
-    adminUrl = '/admin',
-    serviciosUrl = '/servicios',
-    crearServicioUrl = '/servicios/crear',
-}) {
+export default function Barra() {
     const { auth } = usePage().props;
     const usuario = auth?.user;
 
@@ -26,13 +24,13 @@ export default function Barra({
 
             {usuario?.admin && (
                 <div className="barra-servicios">
-                    <Link className="boton" href={adminUrl}>
+                    <Link className="boton" href={AdminController.index.url()}>
                         Ver Citas
                     </Link>
-                    <Link className="boton" href={serviciosUrl}>
+                    <Link className="boton" href={ServicioController.index.url()}>
                         Ver Servicios
                     </Link>
-                    <Link className="boton" href={crearServicioUrl}>
+                    <Link className="boton" href={ServicioController.showCrear.url()}>
                         Nuevo Servicio
                     </Link>
                 </div>

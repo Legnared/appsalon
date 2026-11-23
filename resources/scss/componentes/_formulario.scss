@@ -2,26 +2,63 @@
 @use 'base/mixins' as m;
 
 .formulario {
-    margin-top: 5rem;
+    margin-top: 3.5rem;
     width: 100%;
+    padding: 2.8rem 2.4rem;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.4rem;
+
+    .boton {
+        width: 100%;
+        margin: 2.5rem 0 0 0;
+    }
 }
 
 .campo {
     display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
     margin-bottom: 2rem;
-    align-items: center;
-    label {
-        flex: 0 0 10rem;
+
+    @include m.telefono {
+        flex-direction: row;
+        align-items: center;
+        gap: 1.5rem;
     }
+
+    label {
+        flex: 0 0 11rem;
+        font-weight: v.$bold;
+        font-size: 1.5rem;
+        color: v.$gris;
+    }
+
     input {
         flex: 1;
-        border: none;
-        padding: calc(v.$separacion / 4);
-        border-radius: 1rem;
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background-color: rgba(255, 255, 255, 0.06);
+        color: v.$blanco;
+        padding: 1.3rem 1.6rem;
+        border-radius: 0.9rem;
+        font-size: 1.6rem;
+        transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+
+        &::placeholder {
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        &:focus {
+            outline: none;
+            border-color: v.$azul;
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(13, 166, 243, 0.22);
+        }
 
         &:disabled {
-            background-color: lighten(v.$negro, 30%);
-            color: v.$blanco;
+            background-color: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.7);
             cursor: not-allowed;
         }
     }
