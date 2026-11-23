@@ -9,29 +9,42 @@ export default function ServiciosActualizar({ servicio }) {
         id: servicio?.id ?? '',
         nombre: servicio?.nombre ?? '',
         precio: servicio?.precio ?? '',
+        duracion_minutos: servicio?.duracion_minutos ?? 30,
+        descripcion: servicio?.descripcion ?? '',
+        activo: servicio?.activo ?? true,
+        imagen: null,
+        eliminar_imagen: false,
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(ServicioController.actualizar.url({ query: { id: servicio.id } }));
+        post(ServicioController.actualizar.url({ query: { id: servicio.id } }), {
+            forceFormData: true,
+        });
     };
 
     return (
         <>
-            <Head title="Actualizar Servicio" />
+            <Head title="Editar Servicio" />
 
-            <h1 className="nombre-pagina">Actualizar Servicio</h1>
-            <p className="descripcion-pagina">Modifica los valores del formulario</p>
+            <h1 className="nombre-pagina">Editar Servicio</h1>
+            <p className="descripcion-pagina">
+                Modifica los detalles, descripción o fotografía del servicio
+            </p>
 
             <Barra />
             <Alertas />
 
             <form onSubmit={handleSubmit} className="formulario" noValidate>
-                <ServicioFormulario data={data} setData={setData} />
+                <ServicioFormulario
+                    data={data}
+                    setData={setData}
+                    imagenActualUrl={servicio?.imagen_url ?? null}
+                />
                 <input
                     type="submit"
                     className="boton"
-                    value={processing ? 'Actualizando...' : 'Actualizar'}
+                    value={processing ? 'Guardando cambios...' : 'Guardar Cambios'}
                     disabled={processing}
                 />
             </form>

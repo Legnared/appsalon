@@ -8,11 +8,18 @@ export default function ServiciosCrear() {
     const { data, setData, post, processing } = useForm({
         nombre: '',
         precio: '',
+        duracion_minutos: 30,
+        descripcion: '',
+        activo: true,
+        imagen: null,
+        eliminar_imagen: false,
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(ServicioController.crear.url());
+        post(ServicioController.crear.url(), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -21,7 +28,7 @@ export default function ServiciosCrear() {
 
             <h1 className="nombre-pagina">Nuevo Servicio</h1>
             <p className="descripcion-pagina">
-                Llena todos los campos para añadir un nuevo servicio
+                Añade nombre, precio, descripción y foto de referencia del servicio
             </p>
 
             <Barra />

@@ -12,7 +12,7 @@ class CitaController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('Cita/Index', [
-            'serviciosIniciales' => Servicio::orderBy('id')->get(),
+            'serviciosIniciales' => Servicio::where('activo', true)->orderBy('id')->get(),
             'hoy' => now()->toDateString(),
         ]);
     }

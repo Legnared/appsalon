@@ -44,5 +44,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/servicios/crear', [ServicioController::class, 'crear'])->name('servicios.store');
     Route::get('/servicios/actualizar', [ServicioController::class, 'showActualizar'])->name('servicios.actualizar');
     Route::post('/servicios/actualizar', [ServicioController::class, 'actualizar'])->name('servicios.update');
+    Route::post('/servicios/toggle-activo', [ServicioController::class, 'toggleActivo'])->name('servicios.toggle');
     Route::post('/servicios/eliminar', [ServicioController::class, 'eliminar'])->name('servicios.eliminar');
 });

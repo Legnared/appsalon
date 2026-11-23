@@ -202,8 +202,27 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                                     data-id-servicio={servicio.id}
                                     onClick={() => toggleServicio(servicio)}
                                 >
+                                    {servicio.imagen_url && (
+                                        <div className="servicio-foto">
+                                            <img
+                                                src={servicio.imagen_url}
+                                                alt={servicio.nombre}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    )}
                                     <p className="nombre-servicio">{servicio.nombre}</p>
-                                    <p className="precio-servicio">${servicio.precio}</p>
+                                    {servicio.descripcion && (
+                                        <p className="descripcion-servicio">
+                                            {servicio.descripcion}
+                                        </p>
+                                    )}
+                                    <div className="servicio-footer-meta">
+                                        <span className="duracion-servicio">
+                                            {servicio.duracion_minutos || 30} min
+                                        </span>
+                                        <p className="precio-servicio">${servicio.precio}</p>
+                                    </div>
                                 </div>
                             );
                         })}

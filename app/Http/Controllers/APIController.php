@@ -14,7 +14,7 @@ class APIController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Servicio::orderBy('id')->get());
+        return response()->json(Servicio::where('activo', true)->orderBy('id')->get());
     }
 
     public function guardar(Request $request): JsonResponse
