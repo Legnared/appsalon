@@ -17,11 +17,17 @@ class Cita extends Model
         'fecha',
         'hora',
         'usuarioId',
+        'barberoId',
     ];
 
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(Usuario::class, 'usuarioId');
+    }
+
+    public function barbero(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'barberoId');
     }
 
     public function servicios(): BelongsToMany

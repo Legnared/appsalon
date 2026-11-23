@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -22,8 +24,18 @@ class Usuario extends Authenticatable
         'password',
         'telefono',
         'admin',
+        'rol',
+        'especialidad',
+        'foto',
+        'activo',
+        'barbero_id',
         'confirmado',
         'token',
+    ];
+
+    protected $appends = [
+        'foto_url',
+        'nombre_completo',
     ];
 
     protected $hidden = [
@@ -35,6 +47,7 @@ class Usuario extends Authenticatable
     {
         return [
             'admin' => 'boolean',
+            'activo' => 'boolean',
             'confirmado' => 'boolean',
             'password' => 'hashed',
         ];
@@ -47,9 +60,58 @@ class Usuario extends Authenticatable
         );
     }
 
+    protected function fotoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->foto ? asset('storage/' . ltrim($this->foto, '/')) : null,
+        );
+    }
+
+    public function esAdmin(): bool
+    {
+        return (bool) $this->admin || $this->rol === 'admin';
+    }
+
+    public function esBarbero(): bool
+    {
+        return $this->rol === 'barbero';
+    }
+
+    public function esCliente(): bool
+    {
+        return ! $this->esAdmin() && ! $this->esBarbero();
+    }
+
+    public function scopeBarberos(Builder $query): Builder
+    {
+        return $query->where('rol', 'barbero');
+    }
+
+    public function scopeClientes(Builder $query): Builder
+    {
+        return $query->where('rol', 'cliente')->where(function (Builder $q) {
+            $q->where('admin', false)->orWhereNull('admin');
+        });
+    }
+
     public function citas(): HasMany
     {
         return $this->hasMany(Cita::class, 'usuarioId');
+    }
+
+    public function citasComoBarbero(): HasMany
+    {
+        return $this->hasMany(Cita::class, 'barberoId');
+    }
+
+    public function barberoAsignado(): BelongsTo
+    {
+        return $this->belongsTo(Usuario::class, 'barbero_id');
+    }
+
+    public function clientesAsignados(): HasMany
+    {
+        return $this->hasMany(Usuario::class, 'barbero_id');
     }
 
     public function crearToken(): string

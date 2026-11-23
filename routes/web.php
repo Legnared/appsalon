@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\APIController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BarberoController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PagoWebhookController;
@@ -52,4 +53,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/servicios/actualizar', [ServicioController::class, 'actualizar'])->name('servicios.update');
     Route::post('/servicios/toggle-activo', [ServicioController::class, 'toggleActivo'])->name('servicios.toggle');
     Route::post('/servicios/eliminar', [ServicioController::class, 'eliminar'])->name('servicios.eliminar');
+
+    // Gestión de Barberos (Spec 009 - Fase 1)
+    Route::get('/barberos', [BarberoController::class, 'index'])->name('barberos.index');
+    Route::get('/barberos/crear', [BarberoController::class, 'showCrear'])->name('barberos.crear');
+    Route::post('/barberos/crear', [BarberoController::class, 'crear'])->name('barberos.store');
+    Route::get('/barberos/actualizar', [BarberoController::class, 'showActualizar'])->name('barberos.actualizar');
+    Route::post('/barberos/actualizar', [BarberoController::class, 'actualizar'])->name('barberos.update');
+    Route::post('/barberos/toggle-activo', [BarberoController::class, 'toggleActivo'])->name('barberos.toggle');
 });

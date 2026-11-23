@@ -46,7 +46,9 @@ class HandleInertiaRequests extends Middleware
                     'apellido' => $user->apellido ?? '',
                     'nombreCompleto' => trim(($user->nombre ?? $user->name ?? '') . ' ' . ($user->apellido ?? '')),
                     'email' => $user->email,
-                    'admin' => (bool) ($user->admin ?? false),
+                    'admin' => (bool) ($user->admin ?? false) || ($user->rol ?? null) === 'admin',
+                    'rol' => $user->rol ?? ((bool) ($user->admin ?? false) ? 'admin' : 'cliente'),
+                    'foto_url' => $user->foto_url ?? null,
                 ] : null,
             ],
             'flash' => [

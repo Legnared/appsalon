@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
+import BarberoController from '@/actions/App/Http/Controllers/BarberoController';
 import CitaController from '@/actions/App/Http/Controllers/CitaController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
@@ -28,6 +29,19 @@ export default function BottomTabBar() {
                         <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
                     <span>Citas</span>
+                </Link>
+
+                <Link
+                    href={BarberoController.index.url()}
+                    className={`bottom-tab-item ${isPath('/barberos') ? 'activo' : ''}`}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span>Barberos</span>
                 </Link>
 
                 <Link

@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
+import BarberoController from '@/actions/App/Http/Controllers/BarberoController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
 export default function Barra() {
@@ -8,6 +9,7 @@ export default function Barra() {
     const usuario = props?.auth?.user;
 
     const esAdminCitas = url.startsWith('/admin');
+    const esBarberos = url.startsWith('/barberos');
     const esCrearServicio = url.startsWith('/servicios/crear');
     const esVerServicios =
         (url === '/servicios' || url.startsWith('/servicios?')) ||
@@ -37,16 +39,22 @@ export default function Barra() {
                         Ver Citas
                     </Link>
                     <Link
+                        className={`boton ${esBarberos ? 'activo' : ''}`}
+                        href={BarberoController.index.url()}
+                    >
+                        Barberos
+                    </Link>
+                    <Link
                         className={`boton ${esVerServicios ? 'activo' : ''}`}
                         href={ServicioController.index.url()}
                     >
-                        Ver Servicios
+                        Servicios
                     </Link>
                     <Link
                         className={`boton ${esCrearServicio ? 'activo' : ''}`}
                         href={ServicioController.showCrear.url()}
                     >
-                        Nuevo Servicio
+                        + Servicio
                     </Link>
                 </div>
             )}
