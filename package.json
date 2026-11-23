@@ -18,7 +18,9 @@
     },
     "dependencies": {
         "@inertiajs/react": "^3.11.0",
+        "date-fns": "^4.4.0",
         "react": "^19.3.1",
+        "react-day-picker": "^10.0.2",
         "react-dom": "^19.3.1",
         "sweetalert2": "^11.26.25"
     }

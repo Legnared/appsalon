@@ -14,7 +14,7 @@ export default function ServiciosIndex({ servicios = [] }) {
             <Head title="Servicios" />
 
             <h1 className="nombre-pagina">Servicios</h1>
-            <p className="descripcion-pagina">Administración de Servicios</p>
+            <p className="descripcion-pagina">Catálogo artesanal de cortes y tratamientos</p>
 
             <Barra />
             <Alertas />
@@ -22,12 +22,10 @@ export default function ServiciosIndex({ servicios = [] }) {
             <ul className="servicios">
                 {servicios.map((servicio) => (
                     <li key={servicio.id}>
-                        <p>
-                            Nombre: <span>{servicio.nombre}</span>
-                        </p>
-                        <p>
-                            Precio: <span>${servicio.precio}</span>
-                        </p>
+                        <div className="servicio-card-top">
+                            <p className="servicio-card-nombre">{servicio.nombre}</p>
+                            <p className="servicio-card-precio">${servicio.precio}</p>
+                        </div>
 
                         <div className="acciones">
                             <Link

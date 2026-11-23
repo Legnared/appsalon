@@ -3,6 +3,7 @@ import { Head, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
+import BarberDatePicker from '@/Components/BarberDatePicker';
 import APIController from '@/actions/App/Http/Controllers/APIController';
 
 const PASO_INICIAL = 1;
@@ -66,8 +67,7 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
         });
     };
 
-    const handleFechaChange = (e) => {
-        const valor = e.target.value;
+    const handleFechaSeleccionada = (valor) => {
         if (!valor) {
             setFecha('');
             return;
@@ -228,12 +228,19 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
 
                         <div className="campo">
                             <label htmlFor="fecha">Fecha</label>
-                            <input
+                            <BarberDatePicker
                                 id="fecha"
-                                type="date"
-                                min={fechaMin}
                                 value={fecha}
-                                onChange={handleFechaChange}
+                                minDate={fechaMin}
+                                disableSundays
+                                onChange={handleFechaSeleccionada}
+                                onSundayBlocked={() =>
+                                    mostrarAlertaTemporal(
+                                        'Domingos No Trabajamos, Elije otro día de Lunes a Sábado',
+                                        'error'
+                                    )
+                                }
+                                placeholder="Elige el día de tu cita"
                             />
                         </div>
 

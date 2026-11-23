@@ -3,48 +3,56 @@
 
 .listado-servicios {
     display: grid;
-    gap: 1.8rem;
-    margin-top: 2.5rem;
+    gap: 1.6rem;
+    margin-top: 2.2rem;
 
     @include m.tablet {
-        @include m.grid(2, 1.8rem);
+        @include m.grid(2, 1.6rem);
     }
 
     .servicio {
-        background-color: v.$blanco;
-        padding: 2.4rem 2rem;
-        border-radius: 1.2rem;
-        border: 2px solid transparent;
-        transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        background: linear-gradient(145deg, v.$cuero, v.$nogal);
+        padding: 2.2rem 1.8rem;
+        border-radius: 1.3rem;
+        border: 1px solid rgba(212, 162, 89, 0.22);
+        transition: transform 0.18s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
         text-align: center;
         cursor: pointer;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+        touch-action: manipulation;
 
         &.seleccionado {
-            background-color: v.$azul;
-            border-color: v.$blanco;
-            box-shadow: 0 8px 24px rgba(13, 166, 243, 0.35);
+            background: linear-gradient(145deg, v.$laton, v.$cobre);
+            border-color: v.$marfil;
+            box-shadow: 0 10px 26px rgba(212, 162, 89, 0.35);
 
-            p {
-                color: v.$blanco;
+            p,
+            .precio-servicio {
+                color: v.$carbon;
             }
         }
 
         &:hover {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
+            border-color: v.$laton;
+        }
+
+        &:active {
+            transform: scale(0.97);
         }
 
         p {
-            color: v.$negro;
-            margin: 0 0 1rem 0;
-            font-size: 1.8rem;
-            font-weight: v.$bold;
+            color: v.$marfil;
+            margin: 0 0 0.8rem 0;
+            font-size: 1.7rem;
+            font-weight: 600;
         }
 
         .precio-servicio {
-            color: v.$azul;
-            font-weight: v.$black;
-            font-size: 2.8rem;
+            font-family: v.$fuente_editorial;
+            color: v.$laton;
+            font-weight: 700;
+            font-size: 2.6rem;
             margin: 0;
         }
     }

@@ -3,24 +3,31 @@
 
 .contenedor-app {
     min-height: 100vh;
-    background-color: v.$negro;
+    background: radial-gradient(circle at top right, #231d17 0%, v.$carbon 62%);
+
+    &.con-bottom-nav .app {
+        padding-bottom: 10rem;
+        @include m.tablet {
+            padding-bottom: 6rem;
+        }
+    }
 
     @include m.tablet {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: minmax(36%, 44%) 1fr;
         min-height: 100vh;
         height: 100vh;
     }
 
     .imagen {
         position: relative;
-        height: 24rem;
-        background-color: #11120e;
+        height: 22rem;
+        background-color: #110f0d;
         background-image: url('/img/1.webp');
         background-size: cover;
         background-position: center center;
-        background-repeat: no-repeat;
         overflow: hidden;
+        border-bottom: 1px solid rgba(212, 162, 89, 0.25);
 
         picture,
         img {
@@ -29,6 +36,7 @@
             height: 100%;
             object-fit: cover;
             object-position: center center;
+            filter: sepia(0.16) contrast(1.04) brightness(0.82);
         }
 
         &::after {
@@ -37,58 +45,97 @@
             inset: 0;
             background: linear-gradient(
                 180deg,
-                rgba(26, 27, 21, 0.15) 0%,
-                rgba(26, 27, 21, 0.45) 100%
+                rgba(20, 18, 16, 0.2) 0%,
+                rgba(20, 18, 16, 0.78) 100%
             );
             pointer-events: none;
+        }
+
+        .marca-barberia {
+            position: absolute;
+            left: 2rem;
+            right: 2rem;
+            bottom: 2rem;
+            z-index: 2;
+            padding: 1.4rem 1.8rem;
+            background: rgba(20, 18, 16, 0.68);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(212, 162, 89, 0.32);
+            border-radius: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+
+            .marca-etiqueta {
+                font-size: 1.05rem;
+                letter-spacing: 0.22rem;
+                color: v.$laton;
+                font-weight: v.$bold;
+                text-transform: uppercase;
+            }
+
+            .marca-titulo {
+                font-family: v.$fuente_editorial;
+                font-size: 2.6rem;
+                color: v.$marfil;
+                line-height: 1.1;
+            }
+
+            .marca-subtitulo {
+                font-size: 1.25rem;
+                color: v.$arena;
+            }
         }
 
         @include m.tablet {
             height: 100%;
             min-height: 100vh;
+            border-bottom: none;
+            border-right: 1px solid rgba(212, 162, 89, 0.22);
+
+            .marca-barberia {
+                left: 3rem;
+                right: 3rem;
+                bottom: 3rem;
+                padding: 2rem 2.4rem;
+
+                .marca-titulo {
+                    font-size: 3.4rem;
+                }
+            }
         }
     }
 
     .app {
-        width: 92%;
-        max-width: 68rem;
+        width: 94%;
+        max-width: 72rem;
         margin: 0 auto;
-        padding: 3.5rem 1.5rem 5rem;
+        padding: 2.5rem 1rem 5rem;
 
         @include m.tablet {
             width: 100%;
-            max-width: 64rem;
-            padding: 4.5rem 4rem 6rem;
+            max-width: 74rem;
+            padding: 4rem 4.2rem 6rem;
             overflow-y: auto;
             height: 100vh;
-
-            &::-webkit-scrollbar {
-                width: 0.7rem;
-            }
-            &::-webkit-scrollbar-track {
-                background: rgba(255, 255, 255, 0.04);
-            }
-            &::-webkit-scrollbar-thumb {
-                background: rgba(13, 166, 243, 0.45);
-                border-radius: 1rem;
-            }
-            &::-webkit-scrollbar-thumb:hover {
-                background: v.$azul;
-            }
         }
     }
 }
 
 .barra {
-    margin: 3rem 0;
-    padding: 1.8rem 2rem;
-    background-color: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 1.2rem;
+    margin: 2.4rem 0;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, v.$cuero 0%, v.$nogal 100%);
+    border: 1px solid rgba(212, 162, 89, 0.22);
+    border-radius: 1.4rem;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
 
     p {
         margin: 0 0 1.2rem 0;
-        font-size: 1.8rem;
+        font-size: 1.65rem;
+        color: v.$marfil;
+        font-weight: 600;
+
         @include m.tablet {
             margin: 0;
         }
@@ -104,18 +151,19 @@
     .boton,
     .boton-cerrar-sesion {
         margin: 0;
-        padding: 1rem 2rem;
-        font-size: 1.5rem;
+        min-height: 4.2rem;
+        padding: 0.9rem 2rem;
+        font-size: 1.45rem;
     }
 }
 
 .barra-servicios {
-    margin-bottom: 3.5rem;
-    display: flex;
-    flex-direction: column;
+    display: none;
+    margin-bottom: 2.8rem;
     gap: 1.2rem;
 
     @include m.tablet {
+        display: flex;
         flex-direction: row;
         justify-content: space-between;
     }
@@ -123,7 +171,31 @@
     .boton {
         margin: 0;
         flex: 1;
-        padding: 1.2rem 1.8rem;
-        font-size: 1.6rem;
+        padding: 1.15rem 1.6rem;
+        font-size: 1.5rem;
+        background-color: v.$cuero;
+        color: v.$marfil;
+        border: 1px solid rgba(212, 162, 89, 0.35);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+
+        &:hover {
+            background-color: rgba(212, 162, 89, 0.22);
+            border-color: v.$laton_hover;
+            color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(212, 162, 89, 0.3), 0 10px 22px rgba(0, 0, 0, 0.38);
+            transform: translateY(-2px);
+        }
+
+        &.activo {
+            background: linear-gradient(135deg, v.$laton_hover 0%, v.$laton 100%);
+            border-color: #f7dfb5;
+            color: v.$carbon;
+            box-shadow: 0 0 0 2px rgba(212, 162, 89, 0.35), 0 10px 24px rgba(212, 162, 89, 0.32);
+
+            &:hover {
+                background: linear-gradient(135deg, #f0c987 0%, v.$laton_hover 100%);
+                color: v.$carbon;
+            }
+        }
     }
 }

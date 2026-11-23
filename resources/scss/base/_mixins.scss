@@ -19,36 +19,42 @@
 
 @mixin boton($bgColor, $colorTexto) {
     background-color: $bgColor;
-    padding: 1.4rem 3.2rem;
+    min-height: 4.6rem;
+    padding: 1.2rem 2.8rem;
     color: $colorTexto;
-    font-size: 1.8rem;
+    font-size: 1.65rem;
     font-weight: 700;
-    border: none;
-    border-radius: 0.9rem;
-    transition: background-color 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+    letter-spacing: 0.03rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    transition: background-color 0.22s ease, transform 0.14s ease, box-shadow 0.22s ease;
     text-align: center;
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    margin: 3.5rem 0;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    margin: 2.5rem 0;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+    touch-action: manipulation;
 
     @include tablet {
         width: auto;
     }
 
     &:hover {
-        background-color: darken($bgColor, 8%);
-        transform: translateY(-1px);
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36);
+        background-color: lighten($bgColor, 8%);
+        border-color: rgba(245, 239, 230, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(212, 162, 89, 0.28);
         cursor: pointer;
     }
 
     &:active {
-        transform: translateY(0);
+        transform: scale(0.97);
     }
 
     &:disabled {
-        opacity: 0.65;
+        opacity: 0.6;
         cursor: not-allowed;
         transform: none;
     }

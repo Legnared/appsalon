@@ -1,0 +1,169 @@
+@use 'base/variables' as v;
+
+.barber-datepicker {
+    position: relative;
+    width: 100%;
+    flex: 1;
+
+    .barber-datepicker-trigger {
+        width: 100%;
+        min-height: 4.6rem;
+        padding: 1rem 1.4rem;
+        border-radius: 0.95rem;
+        border: 1px solid rgba(212, 162, 89, 0.28);
+        background-color: rgba(20, 18, 16, 0.82);
+        color: v.$marfil;
+        font-family: v.$fuente_principal;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+
+        .placeholder {
+            color: rgba(185, 175, 161, 0.55);
+        }
+
+        .valor {
+            color: v.$marfil;
+            font-weight: 500;
+        }
+
+        .icono-calendario {
+            width: 1.9rem;
+            height: 1.9rem;
+            color: v.$laton;
+            flex-shrink: 0;
+        }
+
+        &:hover,
+        &.abierto {
+            border-color: v.$laton_hover;
+            background-color: rgba(31, 27, 23, 0.95);
+            box-shadow: 0 0 0 3px rgba(212, 162, 89, 0.22);
+        }
+    }
+
+    .barber-datepicker-popover {
+        position: absolute;
+        top: calc(100% + 0.8rem);
+        left: 0;
+        z-index: 60;
+        padding: 1.4rem;
+        border-radius: 1.4rem;
+        background: linear-gradient(160deg, #241f1a 0%, #161310 100%);
+        border: 1px solid rgba(212, 162, 89, 0.38);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+
+        .rdp-root {
+            --rdp-accent-color: #{v.$laton};
+            --rdp-accent-background-color: rgba(212, 162, 89, 0.18);
+            --rdp-day-height: 3.6rem;
+            --rdp-day-width: 3.6rem;
+            --rdp-day_button-height: 3.4rem;
+            --rdp-day_button-width: 3.4rem;
+            --rdp-day_button-border-radius: 0.85rem;
+            --rdp-today-color: #{v.$laton_hover};
+            --rdp-outside-opacity: 0.35;
+            --rdp-disabled-opacity: 0.25;
+            color: v.$marfil;
+            font-family: v.$fuente_principal;
+            font-size: 1.35rem;
+        }
+
+        .rdp-month_caption {
+            font-family: v.$fuente_editorial;
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: v.$marfil;
+            text-transform: capitalize;
+            margin-bottom: 0.6rem;
+        }
+
+        .rdp-weekday {
+            color: v.$laton;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+
+        .rdp-button_previous,
+        .rdp-button_next {
+            width: 3.2rem;
+            height: 3.2rem;
+            border-radius: 0.8rem;
+            border: 1px solid rgba(212, 162, 89, 0.3);
+            background-color: rgba(20, 18, 16, 0.7);
+            color: v.$laton;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+
+            &:hover {
+                background-color: rgba(212, 162, 89, 0.22);
+                border-color: v.$laton_hover;
+            }
+        }
+
+        .rdp-chevron {
+            fill: v.$laton;
+        }
+
+        .rdp-day_button {
+            color: v.$marfil;
+            font-weight: 500;
+            transition: background-color 0.16s ease, color 0.16s ease;
+
+            &:hover:not(:disabled) {
+                background-color: rgba(212, 162, 89, 0.25);
+                color: #ffffff;
+            }
+        }
+
+        .rdp-selected .rdp-day_button {
+            background: linear-gradient(135deg, v.$laton_hover 0%, v.$laton 100%);
+            color: v.$carbon;
+            font-weight: 700;
+            border: 1px solid #f7dfb5;
+        }
+
+        .rdp-today:not(.rdp-selected) .rdp-day_button {
+            border: 1px solid v.$laton;
+            color: v.$laton_hover;
+            font-weight: 700;
+        }
+
+        .barber-datepicker-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed rgba(212, 162, 89, 0.24);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+
+            .nota-horario {
+                font-size: 1.2rem;
+                color: v.$arena;
+            }
+
+            .btn-ir-hoy {
+                margin-left: auto;
+                padding: 0.55rem 1.2rem;
+                border-radius: 0.75rem;
+                border: 1px solid rgba(212, 162, 89, 0.4);
+                background-color: rgba(212, 162, 89, 0.14);
+                color: v.$laton_hover;
+                font-size: 1.25rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s ease, color 0.2s ease;
+
+                &:hover {
+                    background-color: v.$laton;
+                    color: v.$carbon;
+                }
+            }
+        }
+    }
+}

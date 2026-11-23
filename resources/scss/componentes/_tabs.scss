@@ -2,39 +2,43 @@
 @use 'base/mixins' as m;
 
 .tabs {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    margin-bottom: 1rem;
-
-    @include m.tablet {
-        flex-direction: row;
-        gap: 0.6rem;
-    }
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
 
     button {
-        background-color: rgba(13, 166, 243, 0.16);
-        border: 1px solid rgba(13, 166, 243, 0.45);
-        border-radius: 0.9rem;
-        color: v.$blanco;
-        padding: 1.2rem 1rem;
-        display: block;
+        min-height: 4.4rem;
+        background-color: v.$cuero;
+        border: 1px solid rgba(212, 162, 89, 0.28);
+        border-radius: 1rem;
+        color: v.$arena;
+        padding: 1rem 0.8rem;
         width: 100%;
         text-transform: uppercase;
         font-weight: v.$bold;
-        font-size: 1.4rem;
-        transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+        font-size: 1.25rem;
+        letter-spacing: 0.04rem;
+        transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease, transform 0.14s ease;
+
+        @include m.tablet {
+            font-size: 1.35rem;
+        }
 
         &:hover {
             cursor: pointer;
-            background-color: v.$azul;
-            border-color: v.$azul;
+            border-color: v.$laton;
+            color: v.$marfil;
+        }
+
+        &:active {
+            transform: scale(0.97);
         }
 
         &.actual {
-            background-color: v.$blanco;
-            border-color: v.$blanco;
-            color: v.$azul;
+            background-color: v.$laton;
+            border-color: v.$laton;
+            color: v.$carbon;
         }
     }
 }

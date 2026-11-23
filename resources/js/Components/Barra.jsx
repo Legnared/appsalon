@@ -4,8 +4,14 @@ import AuthController from '@/actions/App/Http/Controllers/AuthController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
 export default function Barra() {
-    const { auth } = usePage().props;
-    const usuario = auth?.user;
+    const { url, props } = usePage();
+    const usuario = props?.auth?.user;
+
+    const esAdminCitas = url.startsWith('/admin');
+    const esCrearServicio = url.startsWith('/servicios/crear');
+    const esVerServicios =
+        (url === '/servicios' || url.startsWith('/servicios?')) ||
+        url.startsWith('/servicios/actualizar');
 
     return (
         <>
@@ -24,13 +30,22 @@ export default function Barra() {
 
             {usuario?.admin && (
                 <div className="barra-servicios">
-                    <Link className="boton" href={AdminController.index.url()}>
+                    <Link
+                        className={`boton ${esAdminCitas ? 'activo' : ''}`}
+                        href={AdminController.index.url()}
+                    >
                         Ver Citas
                     </Link>
-                    <Link className="boton" href={ServicioController.index.url()}>
+                    <Link
+                        className={`boton ${esVerServicios ? 'activo' : ''}`}
+                        href={ServicioController.index.url()}
+                    >
                         Ver Servicios
                     </Link>
-                    <Link className="boton" href={ServicioController.showCrear.url()}>
+                    <Link
+                        className={`boton ${esCrearServicio ? 'activo' : ''}`}
+                        href={ServicioController.showCrear.url()}
+                    >
                         Nuevo Servicio
                     </Link>
                 </div>

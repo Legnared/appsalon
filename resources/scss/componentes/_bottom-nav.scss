@@ -1,0 +1,111 @@
+@use 'base/variables' as v;
+@use 'base/mixins' as m;
+
+.bottom-tab-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding-top: 0.8rem;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+    background: rgba(20, 18, 16, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(212, 162, 89, 0.28);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45);
+
+    @include m.tablet {
+        display: none;
+    }
+
+    .bottom-tab-item {
+        flex: 1;
+        min-height: 4.8rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        background: transparent;
+        border: none;
+        color: v.$arena;
+        font-size: 1.15rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color 0.2s ease, transform 0.14s ease;
+
+        svg {
+            width: 2.1rem;
+            height: 2.1rem;
+        }
+
+        &:active {
+            transform: scale(0.94);
+        }
+
+        &.activo {
+            color: v.$laton;
+        }
+    }
+
+    .bottom-tab-fab {
+        position: relative;
+        top: -1rem;
+
+        .fab-circle {
+            width: 4.4rem;
+            height: 4.4rem;
+            border-radius: 999px;
+            background: linear-gradient(145deg, v.$laton, v.$cobre);
+            color: v.$carbon;
+            font-size: 2.4rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 18px rgba(212, 162, 89, 0.4);
+            border: 2px solid v.$carbon;
+        }
+    }
+}
+
+.a11y-toggle {
+    position: fixed;
+    right: 1.6rem;
+    bottom: 8.6rem;
+    z-index: 35;
+    width: 4.2rem;
+    height: 4.2rem;
+    border-radius: 999px;
+    background: rgba(31, 27, 23, 0.92);
+    border: 1px solid rgba(212, 162, 89, 0.45);
+    color: v.$laton;
+    font-weight: 700;
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+    transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+
+    @include m.tablet {
+        bottom: 2.2rem;
+        right: 2.2rem;
+    }
+
+    &:hover,
+    &.activo {
+        background-color: v.$laton;
+        color: v.$carbon;
+    }
+
+    &:active {
+        transform: scale(0.94);
+    }
+}

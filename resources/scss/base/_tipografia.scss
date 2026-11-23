@@ -1,33 +1,49 @@
 @use 'variables' as v;
 
 h1, h2, h3 {
-    font-family: v.$fuente_principal;
-    margin: 0 0 calc(v.$separacion / 2) 0 ;
-    font-weight: 900;
-    color: v.$blanco;
+    font-family: v.$fuente_editorial;
+    margin: 0 0 2rem 0;
+    font-weight: 700;
+    color: v.$marfil;
     text-align: center;
+    letter-spacing: 0.02rem;
 }
 
 h1 {
-    font-size: 4rem;
-}
-h2 {
     font-size: 3.6rem;
 }
+h2 {
+    font-size: 2.8rem;
+}
 h3 {
-    font-size: 3rem;
+    font-size: 2.3rem;
     text-align: center;
 }
 p {
-    color: v.$blanco;
-    font-size: 2rem;
+    color: v.$marfil;
+    font-size: 1.7rem;
+    line-height: 1.5;
 }
 
 .nombre-pagina {
     text-align: center;
-    margin: 5rem 0;
-    font-weight: v.$bold;
+    margin: 2.5rem 0 1rem 0;
+    font-weight: 700;
+    color: v.$marfil;
+
+    &::after {
+        content: '';
+        display: block;
+        width: 5.5rem;
+        height: 0.25rem;
+        margin: 1.2rem auto 0;
+        background: linear-gradient(90deg, transparent, v.$laton, transparent);
+        border-radius: 1rem;
+    }
 }
 .descripcion-pagina {
     text-align: center;
+    color: v.$arena;
+    font-size: 1.55rem;
+    margin-top: 0;
 }

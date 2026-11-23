@@ -2,11 +2,16 @@
 @use 'base/mixins' as m;
 
 .boton {
-    @include m.boton(v.$azul, v.$blanco);
+    @include m.boton(v.$laton, v.$carbon);
 }
-.boton-cerrar-sesion{
-    @include m.boton(v.$blanco, v.$negro);
+.boton-cerrar-sesion {
+    @include m.boton(v.$nogal, v.$marfil);
+    border-color: rgba(212, 162, 89, 0.32);
+
+    &:hover {
+        background-color: lighten(v.$nogal, 6%);
+    }
 }
 .boton-eliminar {
-    @include m.boton(v.$rojo, v.$blanco);
+    @include m.boton(v.$rojo, v.$marfil);
 }
