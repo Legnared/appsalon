@@ -1,13 +1,39 @@
 import { usePage } from '@inertiajs/react';
 import AccessibilityToggle from '@/Components/AccessibilityToggle';
+import AppSidebar from '@/Components/AppSidebar';
 import BottomTabBar from '@/Components/BottomTabBar';
+import MobileTopBar from '@/Components/MobileTopBar';
 
 export default function MainLayout({ children }) {
     const { auth } = usePage().props;
     const autenticado = Boolean(auth?.user);
 
+    if (autenticado) {
+        return (
+            <div className="app-shell con-bottom-nav">
+                <AppSidebar />
+                <div className="app-shell-main no-scrollbar">
+                    <MobileTopBar />
+                    <div className="mobile-hero-banner" aria-hidden="true">
+                        <picture>
+                            <source srcSet="/img/1.webp" type="image/webp" />
+                            <img src="/img/1.jpg" alt="App Salón Barbería" />
+                        </picture>
+                        <div className="mobile-hero-caption">
+                            <span>EST. BARBER SHOP</span>
+                            <strong>App Salón</strong>
+                        </div>
+                    </div>
+                    <main className="app-shell-content">{children}</main>
+                </div>
+                <AccessibilityToggle />
+                <BottomTabBar />
+            </div>
+        );
+    }
+
     return (
-        <div className={`contenedor-app ${autenticado ? 'con-bottom-nav' : ''}`}>
+        <div className="contenedor-app">
             <div className="imagen">
                 <picture>
                     <source srcSet="/img/1.webp" type="image/webp" />
@@ -21,7 +47,6 @@ export default function MainLayout({ children }) {
             </div>
             <div className="app no-scrollbar">{children}</div>
             <AccessibilityToggle />
-            <BottomTabBar />
         </div>
     );
 }

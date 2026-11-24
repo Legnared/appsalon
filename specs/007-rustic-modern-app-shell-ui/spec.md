@@ -15,14 +15,14 @@ Evolucionar la interfaz de **AppSalon** hacia una experiencia **Barbería Modern
 - **Tipografía:** Google Fonts `Playfair Display` (títulos de marca / encabezados editoriales) + `Poppins` (UI, formularios y datos).
 - **Split-screen (`.contenedor-app`):** En escritorio (`>= 768px`), panel izquierdo con `/img/1.webp` (fallback `/img/1.jpg`), viñeta cálida artesanal y placa de marca (`APP SALÓN · BARBERÍA`); panel derecho con scroll estilizado en latón.
 
-### R2. Patrón Mobile-First Native-like App Shell (`< 768px`)
-- **Viewport y Safe Areas:**
-  - En `resources/views/app.blade.php`: `viewport-fit=cover`, `theme-color="#141210"`, y `<link rel="apple-touch-icon" href="/img/icono.png">`.
-  - Utilidades CSS `.pb-safe` (`padding-bottom: max(1rem, env(safe-area-inset-bottom))`) y `.no-scrollbar`.
-- **Barra de Navegación Inferior Fija (`Components/BottomTabBar.jsx`):**
-  - Visible exclusivamente en móvil (`< 768px`), fija en el borde inferior con `backdrop-filter: blur(14px)`, fondo semitransparente oscuro y borde superior en latón.
-  - **Admin (`/admin`, `/servicios*`):** 4 accesos directos con íconos SVG limpios: `Citas`, `Servicios`, botón central elevado **`+ Nuevo`** (`/servicios/crear`) y `Salir`.
-  - **Cliente (`/cita`):** Botón para ir a `Servicios`, `Fecha`, `Resumen` y `Salir` (o navegación contextual).
+### R2. Patrón App Shell Unificado (Sidebar Escritorio + Mobile-First Native-like App Shell `< 768px`)
+- **Rutas Públicas (`Login`, `Registro`, `Olvidé`, `Reestablecer`):** Mantienen el split-screen con `/img/1.webp` y la placa `APP SALÓN · BARBERÍA`.
+- **Rutas Autenticadas (App Shell Unificado):**
+  - **Escritorio (`>= 768px`):** Sidebar lateral fijo (`AppSidebar.jsx`) con cabecera artesanal de marca, navegación vertical por rol (`Citas`, `Barberos`, `Clientes`, `Servicios` / `Mi Agenda` / `Nueva Cita`) y pie de usuario con **Cerrar Sesión protegido con confirmación SweetAlert2**.
+  - **Móvil (`< 768px`):**
+    - `MobileTopBar.jsx` compacta en la parte superior con marca, saludo breve y botón de salida protegido con confirmación SweetAlert2.
+    - `BottomTabBar.jsx` fija abajo con `backdrop-filter: blur(14px)`, `.pb-safe` (`env(safe-area-inset-bottom)`) y **5 ítems simétricos** en Admin (`Citas`, `Barberos`, `+ Nuevo` al centro, `Clientes`, `Servicios`), sin botón de cierre de sesión abajo para evitar toques accidentales.
+- **Viewport y Safe Areas:** `viewport-fit=cover`, `theme-color="#141210"`, `<link rel="apple-touch-icon" href="/img/icono.png">`, `.pb-safe` y `.no-scrollbar`.
 - **Ergonomía Táctil:**
   - Botones, inputs y tabs con `min-height: 44px`, `touch-action: manipulation` y micro-feedback `active: transform: scale(0.97)`.
 - **Tarjetas Rústico-Modernas en Panel Admin y Servicios:**

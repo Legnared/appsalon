@@ -1,65 +1,7 @@
-import { Link, usePage } from '@inertiajs/react';
-import AdminController from '@/actions/App/Http/Controllers/AdminController';
-import AuthController from '@/actions/App/Http/Controllers/AuthController';
-import BarberoController from '@/actions/App/Http/Controllers/BarberoController';
-import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
-import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
-
+/**
+ * La navegación, el saludo y el cierre de sesión ahora viven unificados
+ * en el App Shell (AppSidebar en escritorio + MobileTopBar / BottomTabBar en móvil).
+ */
 export default function Barra() {
-    const { url, props } = usePage();
-    const usuario = props?.auth?.user;
-
-    const esAdminCitas = url.startsWith('/admin');
-    const esBarberos = url.startsWith('/barberos');
-    const esClientes = url.startsWith('/clientes');
-    const esCrearServicio = url.startsWith('/servicios/crear');
-    const esVerServicios =
-        (url === '/servicios' || url.startsWith('/servicios?')) ||
-        url.startsWith('/servicios/actualizar');
-
-    return (
-        <>
-            <div className="barra">
-                <p>Hola: {usuario?.nombreCompleto ?? ''}</p>
-                <Link
-                    className="boton-cerrar-sesion"
-                    href={AuthController.logout.url()}
-                    method="post"
-                    as="button"
-                    type="button"
-                >
-                    Cerrar Sesión
-                </Link>
-            </div>
-
-            {usuario?.admin && (
-                <div className="barra-servicios">
-                    <Link
-                        className={`boton ${esAdminCitas ? 'activo' : ''}`}
-                        href={AdminController.index.url()}
-                    >
-                        Citas
-                    </Link>
-                    <Link
-                        className={`boton ${esBarberos ? 'activo' : ''}`}
-                        href={BarberoController.index.url()}
-                    >
-                        Barberos
-                    </Link>
-                    <Link
-                        className={`boton ${esClientes ? 'activo' : ''}`}
-                        href={ClienteController.index.url()}
-                    >
-                        Clientes
-                    </Link>
-                    <Link
-                        className={`boton ${esVerServicios || esCrearServicio ? 'activo' : ''}`}
-                        href={ServicioController.index.url()}
-                    >
-                        Servicios
-                    </Link>
-                </div>
-            )}
-        </>
-    );
+    return null;
 }
