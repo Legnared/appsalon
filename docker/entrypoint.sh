@@ -38,4 +38,14 @@ if [ "${RUN_MIGRATIONS_ON_BOOT:-false}" = "true" ]; then
     php artisan migrate --force
 fi
 
+# Seeders iniciales idempotentes opcionales (Admin, Barber Dani y Catálogo base)
+if [ "${RUN_SEEDERS_ON_BOOT:-false}" = "true" ]; then
+    php artisan db:seed --class=AdminUsuarioSeeder --force
+    php artisan db:seed --class=BarberDaniSeeder --force
+    php artisan db:seed --class=CatalogoBarberiaSeeder --force
+fi
+
+# Garantizar un único MPM en Apache (prefork para mod_php)
+rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*
+
 exec apache2-foreground
