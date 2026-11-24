@@ -56,7 +56,7 @@ export default function AppSidebar() {
             <div className="sidebar-brand">
                 <div className="sidebar-brand-content">
                     <span className="brand-tag">EST. BARBER SHOP</span>
-                    <strong className="brand-title">App Salón</strong>
+                    <strong className="brand-title">Danny&apos;s BarberShop</strong>
                     <span className="brand-role">{rolLabel}</span>
                 </div>
             </div>

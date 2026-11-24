@@ -30,13 +30,13 @@ export default function AppLoader() {
     if (!visible) return null;
 
     return (
-        <div className="appsalon-loader-overlay" role="status" aria-live="polite" aria-label="Cargando App Salón">
+        <div className="appsalon-loader-overlay" role="status" aria-live="polite" aria-label="Cargando Danny's BarberShop">
             <div className="appsalon-loader-card">
                 <div className="appsalon-loader-ring">
                     <span className="ring-spinner" aria-hidden="true" />
-                    <img src="/img/icono.png" alt="App Salón" className="loader-favicon" />
+                    <img src="/img/icono.png" alt="Danny's BarberShop" className="loader-favicon" />
                 </div>
-                <strong className="loader-brand">App Salón</strong>
+                <strong className="loader-brand">Danny&apos;s BarberShop</strong>
                 <span className="loader-sub">Preparando tu experiencia...</span>
             </div>
         </div>

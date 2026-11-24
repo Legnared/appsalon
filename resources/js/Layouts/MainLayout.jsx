@@ -18,11 +18,11 @@ export default function MainLayout({ children }) {
                     <div className="mobile-hero-banner" aria-hidden="true">
                         <picture>
                             <source srcSet="/img/1.webp" type="image/webp" />
-                            <img src="/img/1.jpg" alt="App Salón Barbería" />
+                            <img src="/img/1.jpg" alt="Danny's BarberShop" />
                         </picture>
                         <div className="mobile-hero-caption">
                             <span>EST. BARBER SHOP</span>
-                            <strong>App Salón</strong>
+                            <strong>Danny&apos;s BarberShop</strong>
                         </div>
                     </div>
                     <main className="app-shell-content">{children}</main>
@@ -39,11 +39,11 @@ export default function MainLayout({ children }) {
             <div className="imagen">
                 <picture>
                     <source srcSet="/img/1.webp" type="image/webp" />
-                    <img src="/img/1.jpg" alt="App Salón Barbería" />
+                    <img src="/img/1.jpg" alt="Danny's BarberShop" />
                 </picture>
                 <div className="marca-barberia">
                     <span className="marca-etiqueta">EST. BARBER SHOP</span>
-                    <strong className="marca-titulo">App Salón</strong>
+                    <strong className="marca-titulo">Danny&apos;s BarberShop</strong>
                     <span className="marca-subtitulo">Corte Clásico · Barba · Estilo Artesanal</span>
                 </div>
             </div>

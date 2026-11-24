@@ -39,7 +39,7 @@ export default function Mensaje() {
 
             <div className="formulario" style={{ textAlign: 'center' }}>
                 <p style={{ margin: '0 0 1.8rem', color: '#e4ddd2', fontSize: '1.55rem' }}>
-                    Abre el correo de <strong>App Salón</strong> y presiona el botón de confirmación para activar tu acceso.
+                    Abre el correo de <strong>Danny&apos;s BarberShop</strong> y presiona el botón de confirmación para activar tu acceso.
                 </p>
                 <Link
                     href={AuthController.showLogin.url()}

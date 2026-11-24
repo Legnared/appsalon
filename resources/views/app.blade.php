@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#141210">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title inertia>App Salón - Barbería</title>
+    <title inertia>Danny's BarberShop</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">

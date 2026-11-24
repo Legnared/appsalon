@@ -25,7 +25,7 @@ export default function MobileTopBar() {
                     )}
                 </div>
                 <div className="mobile-user-info">
-                    <span className="mobile-brand">App Salón · {rolLabel}</span>
+                    <span className="mobile-brand">Danny&apos;s BarberShop · {rolLabel}</span>
                     <strong className="mobile-greeting">Hola, {usuario.nombre}</strong>
                 </div>
             </div>
