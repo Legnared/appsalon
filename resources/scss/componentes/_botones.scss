@@ -4,6 +4,17 @@
 .boton {
     @include m.boton(v.$laton, v.$carbon);
 }
+.boton-secundario {
+    @include m.boton(v.$nogal, v.$marfil);
+    border: 1px solid rgba(212, 162, 89, 0.48);
+
+    &:hover {
+        background-color: rgba(212, 162, 89, 0.24);
+        border-color: v.$laton_hover;
+        color: #ffffff;
+        box-shadow: 0 8px 22px rgba(212, 162, 89, 0.25);
+    }
+}
 .boton-cerrar-sesion {
     @include m.boton(v.$nogal, v.$marfil);
     border-color: rgba(212, 162, 89, 0.32);

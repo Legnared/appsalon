@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HorarioLaboral;
 use App\Models\Servicio;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class CitaController extends Controller
             'serviciosIniciales' => Servicio::where('activo', true)->orderBy('id')->get(),
             'barberosActivos' => $barberos,
             'barberoPreferidoId' => $request->user()?->barbero_id,
+            'diasCerrados' => HorarioLaboral::diasCerrados(),
             'hoy' => now()->toDateString(),
         ]);
     }

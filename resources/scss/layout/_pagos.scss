@@ -241,11 +241,21 @@
     }
 
     .boton,
+    .boton-secundario,
     .boton-eliminar {
         margin: 0;
         flex: 1;
-        min-height: 4.2rem;
+        min-height: 4.4rem;
         padding: 1rem 1.6rem;
         font-size: 1.45rem;
+    }
+
+    form {
+        flex: 1;
+        display: flex;
+
+        .boton-eliminar {
+            width: 100%;
+        }
     }
 }

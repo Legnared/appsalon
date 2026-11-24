@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarberoController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\HorarioController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PagoWebhookController;
 use App\Http\Controllers\ServicioController;
@@ -74,4 +75,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/clientes/crear', [ClienteController::class, 'crear'])->name('clientes.store');
     Route::get('/clientes/actualizar', [ClienteController::class, 'showActualizar'])->name('clientes.actualizar');
     Route::post('/clientes/actualizar', [ClienteController::class, 'actualizar'])->name('clientes.update');
+
+    // Configuración de Horarios Laborales (Spec 012)
+    Route::get('/horarios', [HorarioController::class, 'index'])->name('horarios.index');
+    Route::post('/horarios', [HorarioController::class, 'actualizar'])->name('horarios.update');
 });

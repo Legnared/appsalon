@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cita;
 use App\Models\CitaServicio;
+use App\Models\HorarioLaboral;
 use App\Models\Pago;
 use App\Models\Servicio;
 use App\Models\Usuario;
@@ -29,15 +30,34 @@ class APIController extends Controller
         $fecha = (string) $request->query('fecha', '');
         $barberoId = $request->query('barbero_id');
 
-        $horariosBase = [];
-        for ($h = 10; $h <= 19; $h++) {
-            $horariosBase[] = sprintf('%02d:00', $h);
-        }
-
         if ($fecha === '' || ! strtotime($fecha)) {
             return response()->json([
-                'slots' => array_map(fn ($h) => ['hora' => $h, 'disponible' => true], $horariosBase),
+                'abierto' => true,
+                'intervalo_minutos' => 60,
+                'slots' => [],
             ]);
+        }
+
+        $diaSemana = (int) date('w', strtotime($fecha));
+        $configDia = HorarioLaboral::porDia($diaSemana);
+
+        if (! $configDia['abierto']) {
+            return response()->json([
+                'fecha' => $fecha,
+                'abierto' => false,
+                'nombre_dia' => $configDia['nombre_dia'],
+                'intervalo_minutos' => $configDia['intervalo_minutos'],
+                'slots' => [],
+            ]);
+        }
+
+        $aperturaMin = $this->horaAMinutos($configDia['hora_apertura']) ?? 600;
+        $cierreMin = $this->horaAMinutos($configDia['hora_cierre']) ?? 1140;
+        $intervalo = max(15, (int) ($configDia['intervalo_minutos'] ?? 60));
+
+        $horariosBase = [];
+        for ($m = $aperturaMin; $m <= $cierreMin; $m += $intervalo) {
+            $horariosBase[] = sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
         }
 
         $query = Cita::where('fecha', $fecha);
@@ -51,12 +71,12 @@ class APIController extends Controller
             ->values()
             ->all();
 
-        $slots = array_map(function (string $horaSlot) use ($horasOcupadasMin) {
+        $slots = array_map(function (string $horaSlot) use ($horasOcupadasMin, $intervalo) {
             $slotMin = $this->horaAMinutos($horaSlot);
             $ocupado = false;
 
             foreach ($horasOcupadasMin as $ocupadaMin) {
-                if (abs($slotMin - $ocupadaMin) < self::MINUTOS_EMPALME) {
+                if (abs($slotMin - $ocupadaMin) < $intervalo) {
                     $ocupado = true;
                     break;
                 }
@@ -70,6 +90,11 @@ class APIController extends Controller
 
         return response()->json([
             'fecha' => $fecha,
+            'abierto' => true,
+            'nombre_dia' => $configDia['nombre_dia'],
+            'hora_apertura' => $configDia['hora_apertura'],
+            'hora_cierre' => $configDia['hora_cierre'],
+            'intervalo_minutos' => $intervalo,
             'barbero_id' => is_numeric($barberoId) ? (int) $barberoId : null,
             'slots' => $slots,
         ]);
@@ -103,11 +128,23 @@ class APIController extends Controller
 
         $barberoId = ! empty($validated['barberoId']) ? (int) $validated['barberoId'] : null;
 
-        // Validar empalme de 60 minutos para el barbero seleccionado
-        if ($this->hayEmpalme($validated['fecha'], $validated['hora'], $barberoId)) {
+        // Validar horario laboral configurado por el administrador
+        $diaSemana = (int) date('w', strtotime($validated['fecha']));
+        $configDia = HorarioLaboral::porDia($diaSemana);
+        if (! $configDia['abierto']) {
             return response()->json([
                 'resultado' => false,
-                'mensaje' => 'Ese horario ya está ocupado con el barbero seleccionado (se requiere al menos 1 hora entre citas). Elige otro horario u otro barbero.',
+                'mensaje' => "Los días {$configDia['nombre_dia']} no laboramos. Por favor elige otro día.",
+            ], 422);
+        }
+
+        $intervaloDia = max(15, (int) ($configDia['intervalo_minutos'] ?? self::MINUTOS_EMPALME));
+
+        // Validar empalme para el barbero seleccionado según el intervalo del día
+        if ($this->hayEmpalme($validated['fecha'], $validated['hora'], $barberoId, null, $intervaloDia)) {
+            return response()->json([
+                'resultado' => false,
+                'mensaje' => "Ese horario ya está ocupado con el barbero seleccionado (se requieren al menos {$intervaloDia} minutos entre citas). Elige otro horario u otro barbero.",
             ], 422);
         }
 
@@ -307,8 +344,13 @@ class APIController extends Controller
         return back();
     }
 
-    private function hayEmpalme(string $fecha, string $hora, ?int $barberoId, ?int $excluirCitaId = null): bool
-    {
+    private function hayEmpalme(
+        string $fecha,
+        string $hora,
+        ?int $barberoId,
+        ?int $excluirCitaId = null,
+        int $minutosEmpalme = self::MINUTOS_EMPALME
+    ): bool {
         $nuevoMin = $this->horaAMinutos($hora);
         if ($nuevoMin === null) {
             return false;
@@ -331,7 +373,7 @@ class APIController extends Controller
 
         foreach ($query->pluck('hora') as $horaExistente) {
             $existenteMin = $this->horaAMinutos((string) $horaExistente);
-            if ($existenteMin !== null && abs($nuevoMin - $existenteMin) < self::MINUTOS_EMPALME) {
+            if ($existenteMin !== null && abs($nuevoMin - $existenteMin) < $minutosEmpalme) {
                 return true;
             }
         }

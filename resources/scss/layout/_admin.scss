@@ -464,3 +464,92 @@
         color: v.$arena;
     }
 }
+
+.horarios-config-form {
+    margin-top: 2rem;
+
+    .horarios-dias-list {
+        display: grid;
+        gap: 1.4rem;
+    }
+
+    .horario-dia-card {
+        padding: 1.8rem 2rem;
+        border-radius: 1.4rem;
+        background: linear-gradient(155deg, v.$cuero 0%, #191612 100%);
+        border: 1px solid rgba(212, 162, 89, 0.28);
+        border-left: 4px solid v.$laton;
+
+        &.cerrado {
+            opacity: 0.7;
+            border-left-color: v.$arena;
+        }
+
+        .horario-dia-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .horario-dia-nombre {
+            font-family: v.$fuente_editorial;
+            font-size: 2rem;
+            color: v.$marfil;
+        }
+
+        .horario-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            cursor: pointer;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: v.$laton_hover;
+
+            input[type='checkbox'] {
+                width: 2rem;
+                height: 2rem;
+                accent-color: v.$laton;
+                cursor: pointer;
+            }
+        }
+
+        .horario-dia-campos {
+            margin-top: 1.4rem;
+            padding-top: 1.4rem;
+            border-top: 1px dashed rgba(212, 162, 89, 0.24);
+            display: grid;
+            gap: 1.2rem;
+
+            @include m.tablet {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .agenda-campo {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+
+                label {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    color: v.$arena;
+                }
+
+                input,
+                select {
+                    width: 100%;
+                    min-height: 4.4rem;
+                    border: 1px solid rgba(212, 162, 89, 0.28);
+                    background-color: rgba(20, 18, 16, 0.82);
+                    color: v.$marfil;
+                    color-scheme: dark;
+                    padding: 0.9rem 1.2rem;
+                    border-radius: 0.9rem;
+                    font-size: 1.45rem;
+                }
+            }
+        }
+    }
+}

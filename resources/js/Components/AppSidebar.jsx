@@ -5,6 +5,7 @@ import AuthController from '@/actions/App/Http/Controllers/AuthController';
 import BarberoController from '@/actions/App/Http/Controllers/BarberoController';
 import CitaController from '@/actions/App/Http/Controllers/CitaController';
 import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
+import HorarioController from '@/actions/App/Http/Controllers/HorarioController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
 export async function confirmarCerrarSesion() {
@@ -110,6 +111,17 @@ export default function AppSidebar() {
                                 <line x1="8.12" y1="8.12" x2="12" y2="12" />
                             </svg>
                             <span>Catálogo de Servicios</span>
+                        </Link>
+
+                        <Link
+                            href={HorarioController.index.url()}
+                            className={`sidebar-link ${isPath('/horarios') ? 'activo' : ''}`}
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span>Horarios Laborales</span>
                         </Link>
                     </>
                 )}

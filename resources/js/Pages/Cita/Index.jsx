@@ -29,6 +29,7 @@ export default function CitaIndex({
     serviciosIniciales = [],
     barberosActivos = [],
     barberoPreferidoId = null,
+    diasCerrados = [0],
     hoy = '',
 }) {
     const { auth, misReservaciones = [] } = usePage().props;
@@ -138,11 +139,11 @@ export default function CitaIndex({
             return;
         }
         const dia = new Date(valor).getUTCDay();
-        if (dia === 0) {
+        if (diasCerrados.includes(dia)) {
             setFecha('');
             setHora('');
             mostrarAlertaTemporal(
-                'Domingos No Trabajamos, Elije otro día de Lunes a Sábado',
+                'Ese día la barbería permanece cerrada. Elige otro día laboral.',
                 'error'
             );
         } else {
@@ -520,11 +521,11 @@ export default function CitaIndex({
                                 id="fecha"
                                 value={fecha}
                                 minDate={fechaMin}
-                                disableSundays
+                                disabledDaysOfWeek={diasCerrados}
                                 onChange={handleFechaSeleccionada}
                                 onSundayBlocked={() =>
                                     mostrarAlertaTemporal(
-                                        'Domingos No Trabajamos, Elije otro día de Lunes a Sábado',
+                                        'Ese día la barbería permanece cerrada. Elige otro día laboral.',
                                         'error'
                                     )
                                 }

@@ -34,6 +34,7 @@ export default function BarberDatePicker({
     onChange,
     minDate = '',
     disableSundays = false,
+    disabledDaysOfWeek = null,
     onSundayBlocked,
     placeholder = 'Selecciona una fecha',
 }) {
@@ -61,20 +62,25 @@ export default function BarberDatePicker({
         };
     }, [abierto]);
 
+    const diasBloqueados = useMemo(() => {
+        if (Array.isArray(disabledDaysOfWeek)) return disabledDaysOfWeek;
+        return disableSundays ? [0] : [];
+    }, [disabledDaysOfWeek, disableSundays]);
+
     const disabledMatchers = useMemo(() => {
         const rules = [];
         if (minLocalDate) {
             rules.push({ before: minLocalDate });
         }
-        if (disableSundays) {
-            rules.push({ dayOfWeek: [0] });
+        if (diasBloqueados.length > 0) {
+            rules.push({ dayOfWeek: diasBloqueados });
         }
         return rules;
-    }, [minLocalDate, disableSundays]);
+    }, [minLocalDate, diasBloqueados]);
 
     const handleSelect = (day) => {
         if (!day) return;
-        if (disableSundays && day.getDay() === 0) {
+        if (diasBloqueados.includes(day.getDay())) {
             onSundayBlocked?.();
             return;
         }
@@ -84,7 +90,7 @@ export default function BarberDatePicker({
 
     const handleHoy = () => {
         const hoy = new Date();
-        if (disableSundays && hoy.getDay() === 0) {
+        if (diasBloqueados.includes(hoy.getDay())) {
             onSundayBlocked?.();
             return;
         }

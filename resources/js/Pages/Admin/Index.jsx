@@ -466,7 +466,7 @@ export default function AdminIndex({
                                                     className="boton-secundario"
                                                     onClick={() => handleReagendar(cita)}
                                                 >
-                                                    Reagendar
+                                                    Re-Agendar
                                                 </button>
                                             )}
 
