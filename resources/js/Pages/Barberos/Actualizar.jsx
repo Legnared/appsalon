@@ -13,6 +13,7 @@ export default function BarberosActualizar({ barbero }) {
         telefono: barbero?.telefono ?? '',
         email: barbero?.email ?? '',
         password: '',
+        admin: Boolean(barbero?.admin),
         activo: barbero?.activo ?? true,
         foto: null,
         eliminar_foto: false,

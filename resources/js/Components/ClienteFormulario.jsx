@@ -31,13 +31,13 @@ export default function ClienteFormulario({
             </div>
 
             <div className="campo">
-                <label htmlFor="telefono">Teléfono</label>
+                <label htmlFor="telefono">Teléfono (con LADA)</label>
                 <input
                     type="tel"
                     id="telefono"
                     name="telefono"
-                    maxLength={10}
-                    placeholder="10 dígitos"
+                    maxLength={25}
+                    placeholder="Ej. +52 1 631 248 7987"
                     value={data.telefono}
                     onChange={(e) => setData('telefono', e.target.value)}
                 />

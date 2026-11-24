@@ -60,6 +60,8 @@ class AdminController extends Controller
                     'hora' => $cita->hora,
                     'barberoId' => $cita->barberoId,
                     'barbero' => $cita->barbero?->nombre_completo,
+                    'para_quien' => $cita->para_quien ?? 'titular',
+                    'nombre_beneficiario' => $cita->nombre_beneficiario,
                     'cliente' => $cita->usuario?->nombreCompleto ?? 'Sin cliente',
                     'email' => $cita->usuario?->email ?? '',
                     'telefono' => $cita->usuario?->telefono ?? '',

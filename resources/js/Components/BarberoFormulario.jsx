@@ -55,12 +55,12 @@ export default function BarberoFormulario({
             </div>
 
             <div className="campo">
-                <label htmlFor="apellido">Apellido(s)</label>
+                <label htmlFor="apellido">Apellido(s) (opcional)</label>
                 <input
                     type="text"
                     id="apellido"
                     name="apellido"
-                    placeholder="Apellido del barbero"
+                    placeholder="Apellido del barbero (opcional)"
                     value={data.apellido}
                     onChange={(e) => setData('apellido', e.target.value)}
                 />
@@ -79,13 +79,13 @@ export default function BarberoFormulario({
             </div>
 
             <div className="campo">
-                <label htmlFor="telefono">Teléfono</label>
+                <label htmlFor="telefono">Teléfono (con LADA)</label>
                 <input
                     type="tel"
                     id="telefono"
                     name="telefono"
-                    maxLength={10}
-                    placeholder="10 dígitos"
+                    maxLength={25}
+                    placeholder="Ej. +52 1 631 248 7987"
                     value={data.telefono}
                     onChange={(e) => setData('telefono', e.target.value)}
                 />
@@ -153,6 +153,18 @@ export default function BarberoFormulario({
                         className="input-file-oculto"
                     />
                 </div>
+            </div>
+
+            <div className="campo campo-switch">
+                <label htmlFor="admin" className="switch-label">
+                    <input
+                        type="checkbox"
+                        id="admin"
+                        checked={Boolean(data.admin)}
+                        onChange={(e) => setData('admin', e.target.checked)}
+                    />
+                    <span>También es Administrador / Dueño de la barbería</span>
+                </label>
             </div>
 
             <div className="campo campo-switch">

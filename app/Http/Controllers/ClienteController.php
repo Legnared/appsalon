@@ -66,7 +66,7 @@ class ClienteController extends Controller
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:60'],
             'apellido' => ['required', 'string', 'max:60'],
-            'telefono' => ['nullable', 'string', 'max:10'],
+            'telefono' => ['nullable', 'string', 'max:25'],
             'email' => ['required', 'email', 'max:60', 'unique:usuarios,email'],
             'password' => ['nullable', 'string', 'min:6'],
             'barbero_id' => ['nullable', 'integer', 'exists:usuarios,id'],
@@ -141,7 +141,7 @@ class ClienteController extends Controller
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:60'],
             'apellido' => ['required', 'string', 'max:60'],
-            'telefono' => ['nullable', 'string', 'max:10'],
+            'telefono' => ['nullable', 'string', 'max:25'],
             'email' => ['required', 'email', 'max:60', 'unique:usuarios,email,' . $cliente->id],
             'password' => ['nullable', 'string', 'min:6'],
             'barbero_id' => ['nullable', 'integer', 'exists:usuarios,id'],

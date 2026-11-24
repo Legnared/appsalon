@@ -29,11 +29,13 @@ export async function confirmarCerrarSesion() {
 export default function AppSidebar() {
     const { url, props } = usePage();
     const usuario = props?.auth?.user;
+    const misReservaciones = props?.misReservaciones ?? [];
 
     if (!usuario) return null;
 
     const esAdmin = Boolean(usuario.admin);
     const esBarbero = !esAdmin && usuario.rol === 'barbero';
+    const esCliente = !esAdmin && !esBarbero;
 
     const isPath = (prefix) => url.startsWith(prefix);
     const rolLabel = esAdmin ? 'Dueño / Admin' : esBarbero ? 'Barbero' : 'Cliente';
@@ -127,19 +129,62 @@ export default function AppSidebar() {
                     </Link>
                 )}
 
-                {!esAdmin && !esBarbero && (
-                    <Link
-                        href={CitaController.index.url()}
-                        className={`sidebar-link ${isPath('/cita') ? 'activo' : ''}`}
-                    >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        <span>Reservar Cita</span>
-                    </Link>
+                {esCliente && (
+                    <>
+                        <Link
+                            href={CitaController.index.url()}
+                            className={`sidebar-link ${isPath('/cita') ? 'activo' : ''}`}
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            <span>Reservar Cita</span>
+                        </Link>
+
+                        <div className="sidebar-reservaciones">
+                            <div className="sidebar-res-header">
+                                <span>Mis Próximas Citas</span>
+                                <strong className="res-count">{misReservaciones.length}</strong>
+                            </div>
+
+                            {misReservaciones.length === 0 ? (
+                                <p className="sidebar-res-empty">
+                                    Aún no tienes citas próximas. Reserva para ti o para tu hijo.
+                                </p>
+                            ) : (
+                                <ul className="sidebar-res-list">
+                                    {misReservaciones.map((res) => (
+                                        <li key={res.id} className="sidebar-res-card">
+                                            <div className="res-top">
+                                                <span className="res-fecha">
+                                                    {res.fecha} · {res.hora}
+                                                </span>
+                                                <span
+                                                    className={`res-pago-dot ${res.pago_estado === 'pagado' ? 'pagado' : 'pendiente'}`}
+                                                >
+                                                    {res.pago_estado === 'pagado' ? 'Pagado' : 'POS'}
+                                                </span>
+                                            </div>
+                                            <strong className="res-para">
+                                                {res.para_quien === 'titular'
+                                                    ? 'Para mí'
+                                                    : `${res.para_quien === 'hijo' ? 'Hijo' : 'Familiar'}: ${res.nombre_beneficiario || 'Sin nombre'}`}
+                                            </strong>
+                                            {res.barbero && (
+                                                <span className="res-meta">Barbero: {res.barbero}</span>
+                                            )}
+                                            <span className="res-meta">
+                                                Total: ${Number(res.total || 0).toFixed(2)}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </>
                 )}
             </nav>
 

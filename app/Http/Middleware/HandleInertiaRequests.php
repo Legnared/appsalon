@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Cita;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -10,16 +11,12 @@ class HandleInertiaRequests extends Middleware
     /**
      * The root template that's loaded on the first page visit.
      *
-     * @see https://inertiajs.com/server-side-setup#root-template
-     *
      * @var string
      */
     protected $rootView = 'app';
 
     /**
      * Determines the current asset version.
-     *
-     * @see https://inertiajs.com/asset-versioning
      */
     public function version(Request $request): ?string
     {
@@ -29,13 +26,12 @@ class HandleInertiaRequests extends Middleware
     /**
      * Define the props that are shared by default.
      *
-     * @see https://inertiajs.com/shared-data
-     *
      * @return array<string, mixed>
      */
     public function share(Request $request): array
     {
         $user = $request->user();
+        $esCliente = $user && ! ((bool) ($user->admin ?? false) || ($user->rol ?? null) === 'admin' || ($user->rol ?? null) === 'barbero');
 
         return [
             ...parent::share($request),
@@ -51,6 +47,28 @@ class HandleInertiaRequests extends Middleware
                     'foto_url' => $user->foto_url ?? null,
                 ] : null,
             ],
+            'misReservaciones' => fn () => $esCliente
+                ? Cita::with(['barbero:id,nombre,apellido', 'servicios:id,nombre,precio', 'pago'])
+                    ->where('usuarioId', $user->id)
+                    ->whereDate('fecha', '>=', now()->toDateString())
+                    ->orderBy('fecha')
+                    ->orderBy('hora')
+                    ->limit(8)
+                    ->get()
+                    ->map(fn (Cita $cita) => [
+                        'id' => $cita->id,
+                        'fecha' => $cita->fecha,
+                        'hora' => substr((string) $cita->hora, 0, 5),
+                        'barbero' => $cita->barbero?->nombre_completo,
+                        'para_quien' => $cita->para_quien ?? 'titular',
+                        'nombre_beneficiario' => $cita->nombre_beneficiario,
+                        'servicios_nombres' => $cita->servicios->pluck('nombre')->values(),
+                        'total' => (float) $cita->servicios->sum('precio'),
+                        'pago_estado' => $cita->pago?->estado ?? 'pendiente',
+                        'pago_metodo' => $cita->pago?->metodo ?? 'terminal_pos',
+                    ])
+                    ->values()
+                : [],
             'flash' => [
                 'exito' => fn () => $request->session()->get('exito'),
                 'error' => fn () => $request->session()->get('error'),

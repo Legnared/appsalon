@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
@@ -31,7 +31,7 @@ export default function CitaIndex({
     barberoPreferidoId = null,
     hoy = '',
 }) {
-    const { auth } = usePage().props;
+    const { auth, misReservaciones = [] } = usePage().props;
     const usuario = auth?.user;
 
     const barberoInicial = useMemo(() => {
@@ -46,6 +46,9 @@ export default function CitaIndex({
     const [tipoRostroFiltro, setTipoRostroFiltro] = useState('');
     const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
     const [barberoId, setBarberoId] = useState(barberoInicial);
+    const [paraQuien, setParaQuien] = useState('titular');
+    const [nombreBeneficiario, setNombreBeneficiario] = useState('');
+    const [verMisCitasMovil, setVerMisCitasMovil] = useState(false);
     const [fecha, setFecha] = useState('');
     const [hora, setHora] = useState('');
     const [slotsHorario, setSlotsHorario] = useState([]);
@@ -153,15 +156,18 @@ export default function CitaIndex({
 
     const datosCompletos = useMemo(() => {
         const requiereBarbero = barberosActivos.length > 0;
+        const beneficiarioValido =
+            paraQuien === 'titular' || nombreBeneficiario.trim().length >= 2;
         return Boolean(
             usuario?.id &&
             usuario?.nombreCompleto &&
             fecha &&
             hora &&
             serviciosSeleccionados.length > 0 &&
+            beneficiarioValido &&
             (!requiereBarbero || barberoId)
         );
-    }, [usuario, fecha, hora, serviciosSeleccionados, barberosActivos, barberoId]);
+    }, [usuario, fecha, hora, serviciosSeleccionados, barberosActivos, barberoId, paraQuien, nombreBeneficiario]);
 
     const totalServicios = useMemo(() => {
         return serviciosSeleccionados.reduce((acc, s) => acc + Number(s.precio || 0), 0);
@@ -196,6 +202,8 @@ export default function CitaIndex({
                 fecha,
                 hora,
                 barberoId,
+                para_quien: paraQuien,
+                nombre_beneficiario: paraQuien === 'titular' ? null : nombreBeneficiario.trim(),
                 usuarioId: usuario.id,
                 nombre: usuario.nombreCompleto,
                 servicios: serviciosSeleccionados.map((s) => s.id),
@@ -233,8 +241,11 @@ export default function CitaIndex({
                 setServiciosSeleccionados([]);
                 setFecha('');
                 setHora('');
+                setParaQuien('titular');
+                setNombreBeneficiario('');
                 setTarjeta((prev) => ({ ...prev, numero: '', expiracion: '', cvv: '' }));
                 setPaso(PASO_INICIAL);
+                router.reload({ only: ['misReservaciones'] });
             }
         } catch (error) {
             const mensaje =
@@ -276,6 +287,46 @@ export default function CitaIndex({
             <p className="descripcion-pagina">Elige tus servicios, barbero y horario disponible</p>
 
             <Barra />
+
+            {misReservaciones.length > 0 && (
+                <div className="mobile-mis-citas-box">
+                    <button
+                        type="button"
+                        className="mobile-mis-citas-toggle"
+                        onClick={() => setVerMisCitasMovil((v) => !v)}
+                    >
+                        <span>Mis Próximas Citas ({misReservaciones.length})</span>
+                        <strong>{verMisCitasMovil ? 'Ocultar' : 'Ver resumen'}</strong>
+                    </button>
+
+                    {verMisCitasMovil && (
+                        <ul className="sidebar-res-list">
+                            {misReservaciones.map((res) => (
+                                <li key={res.id} className="sidebar-res-card">
+                                    <div className="res-top">
+                                        <span className="res-fecha">
+                                            {res.fecha} · {res.hora} hrs
+                                        </span>
+                                        <span
+                                            className={`res-pago-dot ${res.pago_estado === 'pagado' ? 'pagado' : 'pendiente'}`}
+                                        >
+                                            {res.pago_estado === 'pagado' ? 'Pagado' : 'Terminal POS'}
+                                        </span>
+                                    </div>
+                                    <strong className="res-para">
+                                        {res.para_quien === 'titular'
+                                            ? 'Para mí'
+                                            : `${res.para_quien === 'hijo' ? 'Hijo' : 'Familiar'}: ${res.nombre_beneficiario || 'Sin nombre'}`}
+                                    </strong>
+                                    {res.barbero && (
+                                        <span className="res-meta">Barbero: {res.barbero}</span>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
 
             <div id="app">
                 <nav className="tabs">
@@ -376,7 +427,7 @@ export default function CitaIndex({
 
                     <form className="formulario" onSubmit={(e) => e.preventDefault()}>
                         <div className="campo">
-                            <label htmlFor="nombre">Cliente</label>
+                            <label htmlFor="nombre">Titular</label>
                             <input
                                 id="nombre"
                                 type="text"
@@ -385,6 +436,45 @@ export default function CitaIndex({
                                 disabled
                             />
                         </div>
+
+                        <div className="campo campo-columna">
+                            <label>¿Para quién es esta cita?</label>
+                            <div className="para-quien-grid">
+                                {[
+                                    { id: 'titular', label: 'Para mí' },
+                                    { id: 'hijo', label: 'Para mi hijo' },
+                                    { id: 'familiar', label: 'Otro familiar' },
+                                ].map((op) => (
+                                    <button
+                                        key={op.id}
+                                        type="button"
+                                        className={`para-quien-btn ${paraQuien === op.id ? 'activo' : ''}`}
+                                        onClick={() => setParaQuien(op.id)}
+                                    >
+                                        {op.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {paraQuien !== 'titular' && (
+                            <div className="campo">
+                                <label htmlFor="nombre_beneficiario">
+                                    {paraQuien === 'hijo' ? 'Nombre de tu hijo' : 'Nombre del familiar'}
+                                </label>
+                                <input
+                                    id="nombre_beneficiario"
+                                    type="text"
+                                    placeholder={
+                                        paraQuien === 'hijo'
+                                            ? 'Ej. Mateo'
+                                            : 'Ej. Nombre completo del familiar'
+                                    }
+                                    value={nombreBeneficiario}
+                                    onChange={(e) => setNombreBeneficiario(e.target.value)}
+                                />
+                            </div>
+                        )}
 
                         {barberosActivos.length > 0 && (
                             <div className="campo campo-columna">
@@ -500,8 +590,16 @@ export default function CitaIndex({
 
                             <h3>Resumen de Cita</h3>
                             <p>
-                                <span>Nombre:</span> {usuario?.nombreCompleto}
+                                <span>Titular:</span> {usuario?.nombreCompleto}
                             </p>
+                            {paraQuien !== 'titular' && (
+                                <p>
+                                    <span>
+                                        {paraQuien === 'hijo' ? 'Cita para mi hijo:' : 'Cita para familiar:'}
+                                    </span>{' '}
+                                    {nombreBeneficiario}
+                                </p>
+                            )}
                             {barberoSeleccionado && (
                                 <p>
                                     <span>Barbero:</span> {barberoSeleccionado.nombre_completo}

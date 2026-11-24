@@ -25,6 +25,7 @@ class Usuario extends Authenticatable
         'telefono',
         'admin',
         'rol',
+        'es_barbero',
         'especialidad',
         'foto',
         'activo',
@@ -47,6 +48,7 @@ class Usuario extends Authenticatable
     {
         return [
             'admin' => 'boolean',
+            'es_barbero' => 'boolean',
             'activo' => 'boolean',
             'confirmado' => 'boolean',
             'password' => 'hashed',
@@ -74,7 +76,7 @@ class Usuario extends Authenticatable
 
     public function esBarbero(): bool
     {
-        return $this->rol === 'barbero';
+        return $this->rol === 'barbero' || (bool) $this->es_barbero;
     }
 
     public function esCliente(): bool
@@ -84,7 +86,9 @@ class Usuario extends Authenticatable
 
     public function scopeBarberos(Builder $query): Builder
     {
-        return $query->where('rol', 'barbero');
+        return $query->where(function (Builder $q) {
+            $q->where('rol', 'barbero')->orWhere('es_barbero', true);
+        });
     }
 
     public function scopeClientes(Builder $query): Builder

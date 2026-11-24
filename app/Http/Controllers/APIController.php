@@ -81,6 +81,8 @@ class APIController extends Controller
             'fecha' => ['required', 'date'],
             'hora' => ['required', 'string'],
             'barberoId' => ['nullable', 'integer', 'exists:usuarios,id'],
+            'para_quien' => ['nullable', 'in:titular,hijo,familiar'],
+            'nombre_beneficiario' => ['required_if:para_quien,hijo,familiar', 'nullable', 'string', 'max:80'],
             'servicios' => ['required'],
             'metodo_pago' => ['nullable', 'in:tarjeta_online,terminal_pos'],
             'tarjeta_titular' => ['required_if:metodo_pago,tarjeta_online', 'nullable', 'string', 'max:100'],
@@ -92,6 +94,7 @@ class APIController extends Controller
             'fecha.required' => 'La fecha es obligatoria',
             'hora.required' => 'La hora es obligatoria',
             'servicios.required' => 'Debes seleccionar al menos un servicio',
+            'nombre_beneficiario.required_if' => 'Indica el nombre de tu hijo o familiar para esta cita',
             'tarjeta_titular.required_if' => 'El nombre del titular de la tarjeta es obligatorio',
             'tarjeta_numero.required_if' => 'El número de tarjeta es obligatorio',
             'tarjeta_expiracion.required_if' => 'La fecha de expiración es obligatoria',
@@ -147,11 +150,18 @@ class APIController extends Controller
             $metodoPago,
             $gateway
         ) {
+            $paraQuien = $validated['para_quien'] ?? 'titular';
+            $nombreBeneficiario = $paraQuien === 'titular'
+                ? null
+                : trim((string) ($validated['nombre_beneficiario'] ?? ''));
+
             $cita = Cita::create([
                 'fecha' => $validated['fecha'],
                 'hora' => $validated['hora'],
                 'usuarioId' => $usuarioId,
                 'barberoId' => $barberoId,
+                'para_quien' => $paraQuien,
+                'nombre_beneficiario' => $nombreBeneficiario !== '' ? $nombreBeneficiario : null,
             ]);
 
             if ($usuario && ! $usuario->barbero_id && $barberoId) {

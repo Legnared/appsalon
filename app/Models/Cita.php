@@ -18,6 +18,8 @@ class Cita extends Model
         'hora',
         'usuarioId',
         'barberoId',
+        'para_quien',
+        'nombre_beneficiario',
     ];
 
     public function usuario(): BelongsTo

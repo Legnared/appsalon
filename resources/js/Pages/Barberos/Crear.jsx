@@ -12,6 +12,7 @@ export default function BarberosCrear() {
         telefono: '',
         email: '',
         password: '',
+        admin: false,
         activo: true,
         foto: null,
         eliminar_foto: false,

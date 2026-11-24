@@ -380,6 +380,15 @@ export default function AdminIndex({
                                         <p>
                                             Cliente: <span>{cita.cliente}</span>
                                         </p>
+                                        {cita.para_quien && cita.para_quien !== 'titular' && (
+                                            <p>
+                                                Atender a:{' '}
+                                                <span>
+                                                    {cita.nombre_beneficiario || 'Sin nombre'} (
+                                                    {cita.para_quien === 'hijo' ? 'Hijo' : 'Familiar'})
+                                                </span>
+                                            </p>
+                                        )}
                                         {cita.barbero && (
                                             <p>
                                                 Barbero: <span>{cita.barbero}</span>
