@@ -19,6 +19,8 @@ class Servicio extends Model
         'imagen',
         'duracion_minutos',
         'activo',
+        'tipos_rostro',
+        'recomendacion_rostro',
     ];
 
     protected $appends = [
@@ -31,6 +33,7 @@ class Servicio extends Model
             'precio' => 'decimal:2',
             'duracion_minutos' => 'integer',
             'activo' => 'boolean',
+            'tipos_rostro' => 'array',
         ];
     }
 

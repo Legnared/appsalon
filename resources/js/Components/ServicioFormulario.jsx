@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { TIPOS_ROSTRO } from '@/Components/GuiaTipoRostro';
 
 export default function ServicioFormulario({ data, setData, imagenActualUrl = null }) {
     const [previewUrl, setPreviewUrl] = useState(imagenActualUrl);
@@ -122,6 +123,43 @@ export default function ServicioFormulario({ data, setData, imagenActualUrl = nu
                         className="input-file-oculto"
                     />
                 </div>
+            </div>
+
+            <div className="campo campo-columna">
+                <label>Tipos de rostro recomendados (Visagismo)</label>
+                <div className="rostro-chips-form">
+                    {TIPOS_ROSTRO.map((tipo) => {
+                        const lista = Array.isArray(data.tipos_rostro) ? data.tipos_rostro : [];
+                        const marcado = lista.includes(tipo.id);
+                        return (
+                            <button
+                                key={tipo.id}
+                                type="button"
+                                className={`rostro-chip-btn ${marcado ? 'activo' : ''}`}
+                                onClick={() => {
+                                    const siguiente = marcado
+                                        ? lista.filter((id) => id !== tipo.id)
+                                        : [...lista, tipo.id];
+                                    setData('tipos_rostro', siguiente);
+                                }}
+                            >
+                                {tipo.nombre}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="campo campo-columna">
+                <label htmlFor="recomendacion_rostro">Nota de por qué favorece (opcional)</label>
+                <input
+                    type="text"
+                    id="recomendacion_rostro"
+                    name="recomendacion_rostro"
+                    placeholder="Ej. Rebaja laterales y agrega altura arriba para estilizar rostros redondos"
+                    value={data.recomendacion_rostro ?? ''}
+                    onChange={(e) => setData('recomendacion_rostro', e.target.value)}
+                />
             </div>
 
             <div className="campo campo-switch">

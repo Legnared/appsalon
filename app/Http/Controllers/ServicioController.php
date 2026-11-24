@@ -31,6 +31,9 @@ class ServicioController extends Controller
             'descripcion' => ['nullable', 'string', 'max:500'],
             'duracion_minutos' => ['nullable', 'integer', 'min:5', 'max:480'],
             'activo' => ['nullable', 'boolean'],
+            'tipos_rostro' => ['nullable', 'array'],
+            'tipos_rostro.*' => ['string', 'in:redondo,ovalado,cuadrado,alargado,diamante'],
+            'recomendacion_rostro' => ['nullable', 'string', 'max:255'],
             'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ], [
             'nombre.required' => 'El Nombre del Servicio es Obligatorio',
@@ -52,6 +55,8 @@ class ServicioController extends Controller
             'descripcion' => $validated['descripcion'] ?? null,
             'duracion_minutos' => $validated['duracion_minutos'] ?? 30,
             'activo' => $request->has('activo') ? $request->boolean('activo') : true,
+            'tipos_rostro' => $validated['tipos_rostro'] ?? [],
+            'recomendacion_rostro' => $validated['recomendacion_rostro'] ?? null,
             'imagen' => $rutaImagen,
         ]);
 
@@ -97,6 +102,9 @@ class ServicioController extends Controller
             'descripcion' => ['nullable', 'string', 'max:500'],
             'duracion_minutos' => ['nullable', 'integer', 'min:5', 'max:480'],
             'activo' => ['nullable', 'boolean'],
+            'tipos_rostro' => ['nullable', 'array'],
+            'tipos_rostro.*' => ['string', 'in:redondo,ovalado,cuadrado,alargado,diamante'],
+            'recomendacion_rostro' => ['nullable', 'string', 'max:255'],
             'eliminar_imagen' => ['nullable', 'boolean'],
             'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ], [
@@ -128,6 +136,8 @@ class ServicioController extends Controller
             'descripcion' => $validated['descripcion'] ?? null,
             'duracion_minutos' => $validated['duracion_minutos'] ?? 30,
             'activo' => $request->has('activo') ? $request->boolean('activo') : $servicio->activo,
+            'tipos_rostro' => $validated['tipos_rostro'] ?? [],
+            'recomendacion_rostro' => $validated['recomendacion_rostro'] ?? null,
             'imagen' => $rutaImagen,
         ]);
 

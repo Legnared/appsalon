@@ -4,6 +4,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
 import BarberDatePicker from '@/Components/BarberDatePicker';
+import GuiaTipoRostro, { TIPOS_ROSTRO } from '@/Components/GuiaTipoRostro';
 import MetodoPagoSelector from '@/Components/MetodoPagoSelector';
 import APIController from '@/actions/App/Http/Controllers/APIController';
 
@@ -42,6 +43,7 @@ export default function CitaIndex({
 
     const [paso, setPaso] = useState(PASO_INICIAL);
     const [servicios, setServicios] = useState(serviciosIniciales);
+    const [tipoRostroFiltro, setTipoRostroFiltro] = useState('');
     const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
     const [barberoId, setBarberoId] = useState(barberoInicial);
     const [fecha, setFecha] = useState('');
@@ -252,6 +254,18 @@ export default function CitaIndex({
         }
     };
 
+    const serviciosMostrados = useMemo(() => {
+        if (!tipoRostroFiltro) return servicios;
+        const filtrados = servicios.filter(
+            (s) => Array.isArray(s.tipos_rostro) && s.tipos_rostro.includes(tipoRostroFiltro)
+        );
+        return filtrados.length > 0 ? filtrados : servicios;
+    }, [servicios, tipoRostroFiltro]);
+
+    const nombreRostroFiltro = useMemo(() => {
+        return TIPOS_ROSTRO.find((t) => t.id === tipoRostroFiltro)?.nombre ?? '';
+    }, [tipoRostroFiltro]);
+
     const fechaMin = hoy || new Date().toISOString().split('T')[0];
 
     return (
@@ -294,18 +308,34 @@ export default function CitaIndex({
                 <div id="paso-1" className={`seccion ${paso === 1 ? 'mostrar' : ''}`}>
                     <h2>Servicios</h2>
                     <p className="text-center">Da Click &amp; Elige tus servicios a continuación</p>
+
+                    <GuiaTipoRostro
+                        seleccionado={tipoRostroFiltro}
+                        onSeleccionar={setTipoRostroFiltro}
+                    />
+
                     <div id="servicios" className="listado-servicios">
-                        {servicios.map((servicio) => {
+                        {serviciosMostrados.map((servicio) => {
                             const seleccionado = serviciosSeleccionados.some(
                                 (s) => s.id === servicio.id
                             );
+                            const esRecomendado =
+                                tipoRostroFiltro &&
+                                Array.isArray(servicio.tipos_rostro) &&
+                                servicio.tipos_rostro.includes(tipoRostroFiltro);
+
                             return (
                                 <div
                                     key={servicio.id}
-                                    className={`servicio ${seleccionado ? 'seleccionado' : ''}`}
+                                    className={`servicio ${seleccionado ? 'seleccionado' : ''} ${esRecomendado ? 'recomendado-rostro' : ''}`}
                                     data-id-servicio={servicio.id}
                                     onClick={() => toggleServicio(servicio)}
                                 >
+                                    {esRecomendado && (
+                                        <span className="badge-visagismo">
+                                            Ideal para rostro {nombreRostroFiltro}
+                                        </span>
+                                    )}
                                     {servicio.imagen_url && (
                                         <div className="servicio-foto">
                                             <img
@@ -319,6 +349,11 @@ export default function CitaIndex({
                                     {servicio.descripcion && (
                                         <p className="descripcion-servicio">
                                             {servicio.descripcion}
+                                        </p>
+                                    )}
+                                    {servicio.recomendacion_rostro && (
+                                        <p className="tip-visagismo">
+                                            {servicio.recomendacion_rostro}
                                         </p>
                                     )}
                                     <div className="servicio-footer-meta">

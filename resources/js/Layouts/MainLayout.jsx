@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import AccessibilityToggle from '@/Components/AccessibilityToggle';
+import AppLoader from '@/Components/AppLoader';
 import AppSidebar from '@/Components/AppSidebar';
 import BottomTabBar from '@/Components/BottomTabBar';
 import MobileTopBar from '@/Components/MobileTopBar';
@@ -28,6 +29,7 @@ export default function MainLayout({ children }) {
                 </div>
                 <AccessibilityToggle />
                 <BottomTabBar />
+                <AppLoader />
             </div>
         );
     }
@@ -47,6 +49,7 @@ export default function MainLayout({ children }) {
             </div>
             <div className="app no-scrollbar">{children}</div>
             <AccessibilityToggle />
+            <AppLoader />
         </div>
     );
 }

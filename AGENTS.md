@@ -223,6 +223,7 @@ Toda la ejecución del proyecto se rige por las especificaciones en la carpeta `
 | **Spec 007** | `specs/007-rustic-modern-app-shell-ui/` | **UI Barbería Moderna-Rústica + Mobile-First App Shell:** Paleta carbón/cuero/latón (`Playfair Display` + `Poppins`), `BottomTabBar` fija en móvil (`<768px`) con Wayfinder, zonas seguras `.pb-safe`, ergonomía táctil, cards de Admin/Servicios y toggle de tamaño de texto. |
 | **Spec 008** | `specs/008-rich-services-catalog/` | **Catálogo Enriquecido de Servicios:** Migración aditiva (`descripcion`, `imagen`, `duracion_minutos`, `activo`), subida/preview de foto del corte/barba, toggle Activo/Oculto y confirmación SweetAlert2 al eliminar. |
 | **Spec 009** | `specs/009-roles-barbers-and-clients/` | **Roles Multi-Barbero y Cartera de Clientes:** Columna `rol` (`admin`, `barbero`, `cliente`), gestión de Barberos con foto/especialidad/estado, cartera de Clientes filtrable por barbero y alta de prospectos. |
+| **Spec 010** | `specs/010-face-shape-guide-and-barber-catalog/` | **Guía Visual de Visagismo + Catálogo Fotográfico:** Siluetas SVG interactivas por tipo de rostro (`redondo`, `ovalado`, `cuadrado`, `alargado`, `diamante`), recomendaciones de corte, 8 fotografías editoriales y `CatalogoBarberiaSeeder`. |
 
 ### Regla de Enrutamiento con Laravel Wayfinder
 En `vite.config.js` se configura obligatoriamente:

@@ -11,6 +11,8 @@ export default function ServiciosCrear() {
         duracion_minutos: 30,
         descripcion: '',
         activo: true,
+        tipos_rostro: [],
+        recomendacion_rostro: '',
         imagen: null,
         eliminar_imagen: false,
     });

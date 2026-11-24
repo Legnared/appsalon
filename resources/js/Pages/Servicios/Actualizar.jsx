@@ -12,6 +12,8 @@ export default function ServiciosActualizar({ servicio }) {
         duracion_minutos: servicio?.duracion_minutos ?? 30,
         descripcion: servicio?.descripcion ?? '',
         activo: servicio?.activo ?? true,
+        tipos_rostro: Array.isArray(servicio?.tipos_rostro) ? servicio.tipos_rostro : [],
+        recomendacion_rostro: servicio?.recomendacion_rostro ?? '',
         imagen: null,
         eliminar_imagen: false,
     });
