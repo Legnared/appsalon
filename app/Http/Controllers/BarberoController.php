@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Usuario;
+use App\Services\BitacoraService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -60,7 +61,7 @@ class BarberoController extends Controller
 
         $esAdmin = $request->boolean('admin');
 
-        Usuario::create([
+        $barbero = Usuario::create([
             'nombre' => $validated['nombre'],
             'apellido' => $validated['apellido'] ?? '',
             'telefono' => $validated['telefono'] ?? '',
@@ -75,6 +76,16 @@ class BarberoController extends Controller
             'confirmado' => true,
             'token' => null,
         ]);
+
+        BitacoraService::registrar(
+            modulo: 'barberos',
+            accion: 'barbero_creado',
+            descripcion: "Barbero '{$barbero->nombre_completo}' registrado ({$barbero->rol}).",
+            detalles: ['email' => $barbero->email, 'rol' => $barbero->rol, 'telefono' => $barbero->telefono],
+            nivel: 'exito',
+            entidadTipo: 'Usuario',
+            entidadId: $barbero->id
+        );
 
         return redirect('/barberos')->with('exito', 'Barbero registrado correctamente');
     }
@@ -169,6 +180,16 @@ class BarberoController extends Controller
 
         $barbero->update($datos);
 
+        BitacoraService::registrar(
+            modulo: 'barberos',
+            accion: 'barbero_actualizado',
+            descripcion: "Perfil de barbero '{$barbero->nombre_completo}' actualizado.",
+            detalles: ['email' => $barbero->email, 'rol' => $barbero->rol, 'activo' => (bool) $barbero->activo],
+            nivel: 'info',
+            entidadTipo: 'Usuario',
+            entidadId: $barbero->id
+        );
+
         return redirect('/barberos')->with('exito', 'Barbero actualizado correctamente');
     }
 
@@ -181,6 +202,16 @@ class BarberoController extends Controller
             if ($barbero) {
                 $barbero->activo = ! $barbero->activo;
                 $barbero->save();
+
+                BitacoraService::registrar(
+                    modulo: 'barberos',
+                    accion: 'barbero_estado_cambiado',
+                    descripcion: "Barbero '{$barbero->nombre_completo}' marcado como " . ($barbero->activo ? 'activo' : 'inactivo') . '.',
+                    detalles: ['activo' => (bool) $barbero->activo],
+                    nivel: 'alerta',
+                    entidadTipo: 'Usuario',
+                    entidadId: $barbero->id
+                );
             }
         }
 

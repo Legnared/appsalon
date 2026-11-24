@@ -13,11 +13,17 @@ class Pago extends Model
         'citaId',
         'usuarioId',
         'monto',
+        'monto_total',
+        'monto_pagado',
+        'saldo_pendiente',
         'moneda',
         'metodo',
+        'tipo_cobro',
+        'metodo_liquidacion',
         'gateway',
         'estado',
         'referencia_bancaria',
+        'link_pago',
         'codigo_autorizacion',
         'ultimos_4',
         'marca_tarjeta',
@@ -30,6 +36,9 @@ class Pago extends Model
     {
         return [
             'monto' => 'decimal:2',
+            'monto_total' => 'decimal:2',
+            'monto_pagado' => 'decimal:2',
+            'saldo_pendiente' => 'decimal:2',
             'respuesta_payload' => 'array',
             'pagado_en' => 'datetime',
         ];

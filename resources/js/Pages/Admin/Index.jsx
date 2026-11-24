@@ -71,11 +71,50 @@ export default function AdminIndex({
     );
 
     const totalCobrado = citasFiltradas.reduce((acc, cita) => {
-        if (cita.pago?.estado === 'pagado') {
+        if (!cita.pago) return acc;
+        if (cita.pago.monto_pagado !== undefined && cita.pago.monto_pagado !== null) {
+            return acc + Number(cita.pago.monto_pagado);
+        }
+        if (cita.pago.estado === 'pagado') {
             return acc + Number(cita.pago.monto || cita.total || 0);
         }
         return acc;
     }, 0);
+
+    const etiquetaMetodoPago = (metodo) => {
+        switch (metodo) {
+            case 'tarjeta_online':
+                return 'Tarjeta en Línea';
+            case 'mercadopago':
+                return 'Mercado Pago';
+            case 'transferencia':
+                return 'Transferencia SPEI';
+            case 'efectivo':
+                return 'Efectivo';
+            default:
+                return 'Terminal Point';
+        }
+    };
+
+    const etiquetaEstadoPago = (pago) => {
+        if (!pago) return 'PENDIENTE';
+        if (pago.estado === 'pagado') return 'PAGADO 100%';
+        if (pago.estado === 'anticipo_pagado') return 'ANTICIPO PAGADO';
+        if (pago.estado === 'fallido') return 'FALLIDO';
+        if (pago.metodo === 'transferencia') return 'PENDIENTE SPEI';
+        return 'PENDIENTE EN SUCURSAL';
+    };
+
+    const urlWhatsappCliente = (cita) => {
+        const digitos = (cita.telefono || '').replace(/\D/g, '');
+        if (!digitos) return null;
+        const saldo = Number(cita.pago?.saldo_pendiente ?? cita.total ?? 0);
+        const texto = encodeURIComponent(
+            `Hola ${cita.cliente}! Te confirmamos tu cita #${cita.id} para el ${cita.fecha || fecha} a las ${cita.hora} hrs.` +
+                (saldo > 0 ? ` Saldo pendiente: $${saldo.toFixed(2)} MXN.` : ' Tu cita ya está pagada al 100%.')
+        );
+        return `https://wa.me/${digitos}?text=${texto}`;
+    };
 
     const navegarAgenda = (nuevaFecha, nuevoBarbero = barberoFiltro) => {
         if (!nuevaFecha) return;
@@ -169,24 +208,42 @@ export default function AdminIndex({
     const handleCobrarTerminal = async (cita) => {
         if (!cita.pago) return;
 
+        const saldoPendiente = Number(cita.pago.saldo_pendiente ?? cita.total ?? 0);
+        const pagadoPrevio = Number(cita.pago.monto_pagado ?? 0);
+        const metodoDefecto =
+            cita.pago.metodo === 'transferencia' ? 'transferencia' : 'terminal_pos';
+
         const { value: formValues, isConfirmed } = await Swal.fire({
-            title: `Cobrar Cita #${cita.id} en Terminal POS`,
+            title: `Liquidar Saldo · Cita #${cita.id}`,
             html: `
-                <p style="font-size:1.4rem;color:#b9afa1;margin-bottom:1.2rem;">
-                    Monto: <strong style="color:#d4a259;">$${Number(cita.total).toFixed(2)} MXN</strong>
-                </p>
-                <input id="swal-auth" class="swal2-input" placeholder="Código de autorización (opcional en sandbox)" />
-                <input id="swal-last4" class="swal2-input" maxlength="4" placeholder="Últimos 4 dígitos de tarjeta (opcional)" />
+                <div style="text-align:left;display:flex;flex-direction:column;gap:10px;font-size:1.4rem;">
+                    <p style="margin:0;color:#b9afa1;">
+                        Total: <strong style="color:#f5efe6;">$${Number(cita.total).toFixed(2)}</strong>
+                        ${pagadoPrevio > 0 ? ` · Anticipo: <strong style="color:#9be3ff;">$${pagadoPrevio.toFixed(2)}</strong>` : ''}
+                        <br/>Saldo a liquidar: <strong style="color:#d4a259;font-size:1.6rem;">$${saldoPendiente.toFixed(2)} MXN</strong>
+                    </p>
+                    <label style="color:#b9afa1;">Método de liquidación</label>
+                    <select id="swal-metodo" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;">
+                        <option value="terminal_pos" ${metodoDefecto === 'terminal_pos' ? 'selected' : ''}>Terminal Mercado Pago Point</option>
+                        <option value="transferencia" ${metodoDefecto === 'transferencia' ? 'selected' : ''}>Transferencia Bancaria (SPEI Confirmada)</option>
+                        <option value="efectivo">Efectivo en Caja</option>
+                    </select>
+                    <label style="color:#b9afa1;">Folio / Autorización (opcional)</label>
+                    <input id="swal-auth" type="text" placeholder="Ej. AUTH-9042 o folio SPEI" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;" />
+                    <label style="color:#b9afa1;">Últimos 4 dígitos tarjeta (opcional)</label>
+                    <input id="swal-last4" type="text" maxlength="4" placeholder="Ej. 4242" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;" />
+                </div>
             `,
             focusConfirm: false,
             showCancelButton: true,
-            confirmButtonText: 'Confirmar Cobro POS',
+            confirmButtonText: `Confirmar Liquidación ($${saldoPendiente.toFixed(2)})`,
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#d4a259',
             cancelButtonColor: '#28221c',
             background: '#1f1b17',
             color: '#f5efe6',
             preConfirm: () => ({
+                metodo_liquidacion: document.getElementById('swal-metodo')?.value || 'terminal_pos',
                 codigo_autorizacion: document.getElementById('swal-auth')?.value || '',
                 ultimos_4: document.getElementById('swal-last4')?.value || '',
             }),
@@ -202,8 +259,8 @@ export default function AdminIndex({
 
             await Swal.fire({
                 icon: 'success',
-                title: 'Cobro confirmado',
-                text: `Autorización #${data?.pago?.codigo_autorizacion ?? 'OK'} registrada en Terminal POS.`,
+                title: 'Saldo Liquidado',
+                text: `Pago completado al 100%. Referencia #${data?.pago?.codigo_autorizacion ?? 'OK'}.`,
                 background: '#1f1b17',
                 color: '#f5efe6',
                 confirmButtonColor: '#d4a259',
@@ -213,8 +270,8 @@ export default function AdminIndex({
         } catch (error) {
             Swal.fire({
                 icon: 'error',
-                title: 'Error en Terminal POS',
-                text: error?.response?.data?.mensaje || 'No se pudo confirmar el cobro en terminal',
+                title: 'Error al registrar cobro',
+                text: error?.response?.data?.mensaje || 'No se pudo confirmar la liquidación',
                 background: '#1f1b17',
                 color: '#f5efe6',
                 confirmButtonColor: '#b83232',
@@ -418,18 +475,28 @@ export default function AdminIndex({
                                                 <div className="cita-pago-top">
                                                     <span className="pago-meta">
                                                         Método:{' '}
-                                                        <strong>
-                                                            {pago.metodo === 'tarjeta_online'
-                                                                ? 'Tarjeta en Línea'
-                                                                : 'Terminal POS'}
-                                                        </strong>
+                                                        <strong>{etiquetaMetodoPago(pago.metodo)}</strong>
+                                                        {pago.metodo_liquidacion && (
+                                                            <> · Liquidado: <strong>{etiquetaMetodoPago(pago.metodo_liquidacion)}</strong></>
+                                                        )}
                                                     </span>
                                                     <span className={`pago-badge ${pago.estado}`}>
-                                                        {pago.estado === 'pagado'
-                                                            ? 'PAGADO'
-                                                            : pago.estado === 'fallido'
-                                                              ? 'FALLIDO'
-                                                              : 'PENDIENTE EN TERMINAL'}
+                                                        {etiquetaEstadoPago(pago)}
+                                                    </span>
+                                                </div>
+
+                                                <div className="pago-saldos-linea">
+                                                    <span>
+                                                        Pagado:{' '}
+                                                        <strong>
+                                                            ${Number(pago.monto_pagado ?? 0).toFixed(2)}
+                                                        </strong>
+                                                    </span>
+                                                    <span>
+                                                        Saldo pendiente:{' '}
+                                                        <strong className="saldo-pendiente-monto">
+                                                            ${Number(pago.saldo_pendiente ?? 0).toFixed(2)}
+                                                        </strong>
                                                     </span>
                                                 </div>
 
@@ -442,8 +509,8 @@ export default function AdminIndex({
                                                     </p>
                                                 ) : (
                                                     <p className="pago-meta">
-                                                        Ref: {pago.referencia_bancaria || 'Pendiente'} · Terminal:{' '}
-                                                        {pago.terminal_id || 'POS-BARBER-01'}
+                                                        Ref: {pago.referencia_bancaria || 'Pendiente'}
+                                                        {pago.terminal_id ? ` · Terminal: ${pago.terminal_id}` : ''}
                                                     </p>
                                                 )}
                                             </div>
@@ -456,8 +523,21 @@ export default function AdminIndex({
                                                     className="boton"
                                                     onClick={() => handleCobrarTerminal(cita)}
                                                 >
-                                                    Cobrar en Terminal POS
+                                                    {Number(pago.saldo_pendiente ?? cita.total) > 0
+                                                        ? `Liquidar $${Number(pago.saldo_pendiente ?? cita.total).toFixed(2)}`
+                                                        : 'Confirmar Cobro'}
                                                 </button>
+                                            )}
+
+                                            {urlWhatsappCliente(cita) && (
+                                                <a
+                                                    href={urlWhatsappCliente(cita)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="boton-whatsapp"
+                                                >
+                                                    WhatsApp
+                                                </a>
                                             )}
 
                                             {!soloBarbero && (

@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\APIController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarberoController;
+use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\HorarioController;
@@ -79,4 +80,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Configuración de Horarios Laborales (Spec 012)
     Route::get('/horarios', [HorarioController::class, 'index'])->name('horarios.index');
     Route::post('/horarios', [HorarioController::class, 'actualizar'])->name('horarios.update');
+});
+
+// Bitácora de Auditoría — Solo Lectura Exclusivo Admin Técnico (NO dueño/barbero) (Spec 014)
+Route::middleware(['auth', 'bitacora_admin'])->group(function () {
+    Route::get('/bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
 });

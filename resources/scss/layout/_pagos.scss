@@ -31,6 +31,16 @@
             color: v.$laton;
             font-weight: 700;
         }
+
+        .pagos-desglose-sub {
+            margin: 0.4rem 0 0;
+            font-size: 1.3rem;
+            color: v.$arena;
+
+            strong {
+                color: v.$marfil;
+            }
+        }
     }
 
     .pagos-metodos-grid {
@@ -40,6 +50,145 @@
 
         @include m.telefono {
             grid-template-columns: repeat(2, 1fr);
+        }
+
+        &.tres-columnas {
+            @include m.tablet {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    }
+
+    .pagos-tipo-cobro {
+        margin-bottom: 2rem;
+
+        .pagos-subtitulo {
+            display: block;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08rem;
+            color: v.$laton;
+            margin-bottom: 1rem;
+        }
+
+        .tipo-cobro-grid {
+            display: grid;
+            gap: 1rem;
+
+            @include m.telefono {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .tipo-cobro-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.35rem;
+            padding: 1.25rem 1.4rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(212, 162, 89, 0.28);
+            background-color: rgba(20, 18, 16, 0.72);
+            color: v.$marfil;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+
+            strong {
+                font-size: 1.45rem;
+                color: v.$marfil;
+            }
+
+            span {
+                font-size: 1.2rem;
+                color: v.$arena;
+                line-height: 1.35;
+            }
+
+            &:hover {
+                border-color: v.$laton_hover;
+            }
+
+            &.activo {
+                border-color: v.$laton;
+                background: rgba(212, 162, 89, 0.18);
+
+                strong {
+                    color: v.$laton_hover;
+                }
+            }
+        }
+    }
+
+    .spei-datos-card {
+        padding: 1.6rem;
+        border-radius: 1.1rem;
+        background-color: rgba(20, 18, 16, 0.78);
+        border: 1px solid rgba(212, 162, 89, 0.32);
+
+        .spei-titulo {
+            margin: 0 0 1.2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: v.$laton_hover;
+        }
+
+        .spei-fila {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            padding: 0.65rem 0;
+            border-bottom: 1px dashed rgba(212, 162, 89, 0.16);
+            font-size: 1.4rem;
+
+            span {
+                color: v.$arena;
+            }
+
+            strong {
+                color: v.$marfil;
+            }
+
+            .spei-monto {
+                color: v.$laton;
+                font-size: 1.6rem;
+            }
+        }
+
+        .spei-clabe-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+
+            code {
+                font-family: monospace;
+                font-size: 1.45rem;
+                color: v.$marfil;
+                background: rgba(212, 162, 89, 0.12);
+                padding: 0.3rem 0.7rem;
+                border-radius: 0.5rem;
+                letter-spacing: 0.08rem;
+            }
+
+            .btn-copiar-clabe {
+                padding: 0.45rem 1rem;
+                border-radius: 0.6rem;
+                border: 1px solid rgba(212, 162, 89, 0.5);
+                background: rgba(212, 162, 89, 0.16);
+                color: v.$laton_hover;
+                font-size: 1.25rem;
+                font-weight: 700;
+                cursor: pointer;
+
+                &:hover {
+                    background: v.$laton;
+                    color: v.$carbon;
+                }
+            }
         }
     }
 
@@ -208,6 +357,12 @@
             color: #8df0a5;
         }
 
+        &.anticipo_pagado {
+            background-color: rgba(37, 150, 190, 0.22);
+            border: 1px solid rgba(94, 194, 232, 0.55);
+            color: #9be3ff;
+        }
+
         &.pendiente,
         &.procesando {
             background-color: rgba(212, 162, 89, 0.2);
@@ -222,6 +377,22 @@
         }
     }
 
+    .pago-saldos-linea {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        font-size: 1.3rem;
+        color: v.$arena;
+
+        strong {
+            color: v.$marfil;
+        }
+
+        .saldo-pendiente-monto {
+            color: v.$laton_hover;
+        }
+    }
+
     .pago-meta {
         font-size: 1.3rem;
         color: v.$arena;
@@ -233,6 +404,7 @@
     margin-top: 1.6rem;
     display: flex;
     flex-direction: column;
+    flex-wrap: wrap;
     gap: 1rem;
 
     @include m.tablet {
@@ -242,12 +414,32 @@
 
     .boton,
     .boton-secundario,
+    .boton-whatsapp,
     .boton-eliminar {
         margin: 0;
         flex: 1;
         min-height: 4.4rem;
-        padding: 1rem 1.6rem;
-        font-size: 1.45rem;
+        padding: 1rem 1.4rem;
+        font-size: 1.4rem;
+        text-align: center;
+    }
+
+    .boton-whatsapp {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(37, 211, 102, 0.55);
+        background: rgba(37, 211, 102, 0.16);
+        color: #8bf5b0;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background-color 0.2s ease, color 0.2s ease;
+
+        &:hover {
+            background: #25d366;
+            color: #111;
+        }
     }
 
     form {

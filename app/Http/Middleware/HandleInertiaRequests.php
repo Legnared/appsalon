@@ -43,6 +43,8 @@ class HandleInertiaRequests extends Middleware
                     'nombreCompleto' => trim(($user->nombre ?? $user->name ?? '') . ' ' . ($user->apellido ?? '')),
                     'email' => $user->email,
                     'admin' => (bool) ($user->admin ?? false) || ($user->rol ?? null) === 'admin',
+                    'es_barbero' => (bool) ($user->es_barbero ?? false),
+                    'puede_ver_bitacora' => $user->puedeVerBitacora(),
                     'rol' => $user->rol ?? ((bool) ($user->admin ?? false) ? 'admin' : 'cliente'),
                     'foto_url' => $user->foto_url ?? null,
                 ] : null,
@@ -66,6 +68,8 @@ class HandleInertiaRequests extends Middleware
                         'total' => (float) $cita->servicios->sum('precio'),
                         'pago_estado' => $cita->pago?->estado ?? 'pendiente',
                         'pago_metodo' => $cita->pago?->metodo ?? 'terminal_pos',
+                        'monto_pagado' => (float) ($cita->pago?->monto_pagado ?? 0),
+                        'saldo_pendiente' => (float) ($cita->pago?->saldo_pendiente ?? $cita->servicios->sum('precio')),
                     ])
                     ->values()
                 : [],

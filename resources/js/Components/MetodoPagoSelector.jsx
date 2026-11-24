@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 function formatearNumeroTarjeta(valor) {
     const digitos = valor.replace(/\D/g, '').slice(0, 16);
     return digitos.replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -17,8 +19,21 @@ function detectarMarca(numero) {
     return '';
 }
 
+export function calcularMontoAnticipo(total, pagoConfig) {
+    const totalNum = Number(total || 0);
+    if (totalNum <= 0) return 0;
+
+    const tipo = pagoConfig?.anticipo_tipo || 'fijo';
+    const valor = Number(pagoConfig?.anticipo_valor ?? 100);
+    const calculado = tipo === 'porcentaje' ? (totalNum * valor) / 100 : valor;
+    return Math.round(Math.min(totalNum, Math.max(1, calculado)) * 100) / 100;
+}
+
 export default function MetodoPagoSelector({
     total = 0,
+    tipoCobro = 'anticipo',
+    setTipoCobro,
+    pagoConfig = {},
     metodoPago,
     setMetodoPago,
     tarjeta,
@@ -26,23 +41,60 @@ export default function MetodoPagoSelector({
     terminalModo,
     setTerminalModo,
 }) {
+    const [copiado, setCopiado] = useState(false);
     const marca = detectarMarca(tarjeta.numero);
+    const totalNum = Number(total || 0);
+    const montoAnticipo = calcularMontoAnticipo(totalNum, pagoConfig);
+    const puedeAnticipo = totalNum > montoAnticipo && montoAnticipo > 0;
+    const usaAnticipo = metodoPago !== 'terminal_pos' && tipoCobro === 'anticipo' && puedeAnticipo;
+    const montoAhora = metodoPago === 'terminal_pos' ? 0 : usaAnticipo ? montoAnticipo : totalNum;
+    const saldoRestante = Math.max(0, Math.round((totalNum - montoAhora) * 100) / 100);
+    const esMercadoPagoPro = pagoConfig?.driver === 'mercadopago';
+    const spei = pagoConfig?.spei || {};
+
+    const copiarClabe = async () => {
+        if (!spei.clabe) return;
+        try {
+            await navigator.clipboard.writeText(spei.clabe);
+            setCopiado(true);
+            setTimeout(() => setCopiado(false), 2000);
+        } catch {
+            // Fallback silencioso si el navegador restringe clipboard
+        }
+    };
 
     return (
         <div className="pagos-bloque">
             <div className="pagos-total-banner">
-                <span className="pagos-total-label">Total a Pagar</span>
-                <strong className="pagos-total-monto">${Number(total).toFixed(2)} MXN</strong>
+                <div>
+                    <span className="pagos-total-label">Total de Servicios</span>
+                    {usaAnticipo && (
+                        <p className="pagos-desglose-sub">
+                            Pagas ahora <strong>${montoAhora.toFixed(2)}</strong> · Restante en
+                            barbería <strong>${saldoRestante.toFixed(2)}</strong>
+                        </p>
+                    )}
+                </div>
+                <strong className="pagos-total-monto">${totalNum.toFixed(2)} MXN</strong>
             </div>
 
-            <div className="pagos-metodos-grid" role="radiogroup" aria-label="Método de pago">
+            <div className="pagos-metodos-grid tres-columnas" role="radiogroup" aria-label="Método de pago">
                 <button
                     type="button"
                     className={`metodo-card ${metodoPago === 'tarjeta_online' ? 'activo' : ''}`}
                     onClick={() => setMetodoPago('tarjeta_online')}
                 >
-                    <strong>Tarjeta en Línea</strong>
-                    <span>Crédito o débito directo en el dashboard con autorización inmediata.</span>
+                    <strong>Tarjeta / Mercado Pago</strong>
+                    <span>Crédito, débito o cuenta Mercado Pago con confirmación inmediata.</span>
+                </button>
+
+                <button
+                    type="button"
+                    className={`metodo-card ${metodoPago === 'transferencia' ? 'activo' : ''}`}
+                    onClick={() => setMetodoPago('transferencia')}
+                >
+                    <strong>Transferencia SPEI</strong>
+                    <span>Transfiere desde tu app bancaria y envía tu comprobante por WhatsApp.</span>
                 </button>
 
                 <button
@@ -50,88 +102,164 @@ export default function MetodoPagoSelector({
                     className={`metodo-card ${metodoPago === 'terminal_pos' ? 'activo' : ''}`}
                     onClick={() => setMetodoPago('terminal_pos')}
                 >
-                    <strong>Terminal Punto de Venta (POS)</strong>
-                    <span>Paga con tarjeta física en la terminal del salón al llegar.</span>
+                    <strong>Terminal Point / Efectivo</strong>
+                    <span>Paga al llegar a la barbería con terminal Mercado Pago Point o efectivo.</span>
                 </button>
             </div>
 
-            {metodoPago === 'tarjeta_online' ? (
-                <div className="tarjeta-form-grid">
-                    <div className="tarjeta-campo">
-                        <label htmlFor="tarjeta_titular">Titular de la Tarjeta</label>
-                        <input
-                            id="tarjeta_titular"
-                            type="text"
-                            placeholder="Como aparece en la tarjeta"
-                            value={tarjeta.titular}
-                            onChange={(e) =>
-                                setTarjeta((prev) => ({ ...prev, titular: e.target.value }))
-                            }
-                        />
+            {metodoPago !== 'terminal_pos' && puedeAnticipo && (
+                <div className="pagos-tipo-cobro">
+                    <span className="pagos-subtitulo">¿Cuánto deseas pagar ahora?</span>
+                    <div className="tipo-cobro-grid">
+                        <button
+                            type="button"
+                            className={`tipo-cobro-btn ${tipoCobro === 'anticipo' ? 'activo' : ''}`}
+                            onClick={() => setTipoCobro('anticipo')}
+                        >
+                            <strong>Pagar Anticipo · ${montoAnticipo.toFixed(2)}</strong>
+                            <span>
+                                Aparta tu lugar y liquida ${(totalNum - montoAnticipo).toFixed(2)} al
+                                terminar tu servicio.
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            className={`tipo-cobro-btn ${tipoCobro === 'total' ? 'activo' : ''}`}
+                            onClick={() => setTipoCobro('total')}
+                        >
+                            <strong>Pagar 100% · ${totalNum.toFixed(2)}</strong>
+                            <span>Llega a tu cita con todo pagado y sin saldo pendiente.</span>
+                        </button>
                     </div>
+                </div>
+            )}
 
-                    <div className="tarjeta-campo">
-                        <label htmlFor="tarjeta_numero">
-                            <span>Número de Tarjeta</span>
-                            {marca && <span className="marca-badge">{marca}</span>}
-                        </label>
-                        <input
-                            id="tarjeta_numero"
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="4242 4242 4242 4242"
-                            value={tarjeta.numero}
-                            onChange={(e) =>
-                                setTarjeta((prev) => ({
-                                    ...prev,
-                                    numero: formatearNumeroTarjeta(e.target.value),
-                                }))
-                            }
-                        />
+            {metodoPago === 'tarjeta_online' && (
+                esMercadoPagoPro ? (
+                    <div className="spei-datos-card">
+                        <p className="spei-titulo">Checkout Seguro de Mercado Pago</p>
+                        <p className="nota-seguridad" style={{ marginTop: 0 }}>
+                            Al confirmar tu cita generaremos tu enlace oficial de pago en Mercado Pago
+                            por <strong>${montoAhora.toFixed(2)} MXN</strong>. Puedes pagar con tarjeta,
+                            dinero en cuenta o saldo disponible.
+                        </p>
                     </div>
-
-                    <div className="tarjeta-fila-doble">
+                ) : (
+                    <div className="tarjeta-form-grid">
                         <div className="tarjeta-campo">
-                            <label htmlFor="tarjeta_expiracion">Expiración (MM/AA)</label>
+                            <label htmlFor="tarjeta_titular">Titular de la Tarjeta</label>
                             <input
-                                id="tarjeta_expiracion"
+                                id="tarjeta_titular"
+                                type="text"
+                                placeholder="Como aparece en la tarjeta"
+                                value={tarjeta.titular}
+                                onChange={(e) =>
+                                    setTarjeta((prev) => ({ ...prev, titular: e.target.value }))
+                                }
+                            />
+                        </div>
+
+                        <div className="tarjeta-campo">
+                            <label htmlFor="tarjeta_numero">
+                                <span>Número de Tarjeta</span>
+                                {marca && <span className="marca-badge">{marca}</span>}
+                            </label>
+                            <input
+                                id="tarjeta_numero"
                                 type="text"
                                 inputMode="numeric"
-                                placeholder="12/28"
-                                value={tarjeta.expiracion}
+                                placeholder="4242 4242 4242 4242"
+                                value={tarjeta.numero}
                                 onChange={(e) =>
                                     setTarjeta((prev) => ({
                                         ...prev,
-                                        expiracion: formatearExpiracion(e.target.value),
+                                        numero: formatearNumeroTarjeta(e.target.value),
                                     }))
                                 }
                             />
                         </div>
 
-                        <div className="tarjeta-campo">
-                            <label htmlFor="tarjeta_cvv">CVV</label>
-                            <input
-                                id="tarjeta_cvv"
-                                type="password"
-                                inputMode="numeric"
-                                maxLength={4}
-                                placeholder="123"
-                                value={tarjeta.cvv}
-                                onChange={(e) =>
-                                    setTarjeta((prev) => ({
-                                        ...prev,
-                                        cvv: e.target.value.replace(/\D/g, '').slice(0, 4),
-                                    }))
-                                }
-                            />
+                        <div className="tarjeta-fila-doble">
+                            <div className="tarjeta-campo">
+                                <label htmlFor="tarjeta_expiracion">Expiración (MM/AA)</label>
+                                <input
+                                    id="tarjeta_expiracion"
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="12/28"
+                                    value={tarjeta.expiracion}
+                                    onChange={(e) =>
+                                        setTarjeta((prev) => ({
+                                            ...prev,
+                                            expiracion: formatearExpiracion(e.target.value),
+                                        }))
+                                    }
+                                />
+                            </div>
+
+                            <div className="tarjeta-campo">
+                                <label htmlFor="tarjeta_cvv">CVV</label>
+                                <input
+                                    id="tarjeta_cvv"
+                                    type="password"
+                                    inputMode="numeric"
+                                    maxLength={4}
+                                    placeholder="123"
+                                    value={tarjeta.cvv}
+                                    onChange={(e) =>
+                                        setTarjeta((prev) => ({
+                                            ...prev,
+                                            cvv: e.target.value.replace(/\D/g, '').slice(0, 4),
+                                        }))
+                                    }
+                                />
+                            </div>
+                        </div>
+
+                        <p className="nota-seguridad">
+                            Conexión segura Multi-Banco / Mercado Pago. Nunca almacenamos el número
+                            completo ni el CVV de tu tarjeta.
+                        </p>
+                    </div>
+                )
+            )}
+
+            {metodoPago === 'transferencia' && (
+                <div className="spei-datos-card">
+                    <p className="spei-titulo">Datos para Transferencia Bancaria (SPEI)</p>
+                    <div className="spei-fila">
+                        <span>Banco:</span>
+                        <strong>{spei.banco || 'Mercado Pago / BBVA'}</strong>
+                    </div>
+                    <div className="spei-fila">
+                        <span>Beneficiario:</span>
+                        <strong>{spei.titular || 'Barber Dani'}</strong>
+                    </div>
+                    <div className="spei-fila spei-clabe-fila">
+                        <span>CLABE:</span>
+                        <div className="spei-clabe-wrap">
+                            <code>{spei.clabe || '000000000000000000'}</code>
+                            <button
+                                type="button"
+                                className="btn-copiar-clabe"
+                                onClick={copiarClabe}
+                            >
+                                {copiado ? '¡Copiada!' : 'Copiar'}
+                            </button>
                         </div>
                     </div>
-
-                    <p className="nota-seguridad">
-                        Conexión segura Multi-Banco. Nunca almacenamos el número completo ni el CVV de tu tarjeta.
+                    <div className="spei-fila">
+                        <span>Monto a transferir:</span>
+                        <strong className="spei-monto">${montoAhora.toFixed(2)} MXN</strong>
+                    </div>
+                    <p className="nota-seguridad" style={{ marginTop: '1rem' }}>
+                        Al pulsar reservar, tu lugar quedará apartado y te daremos un botón directo
+                        para enviar tu comprobante por WhatsApp a la barbería.
                     </p>
                 </div>
-            ) : (
+            )}
+
+            {metodoPago === 'terminal_pos' && (
                 <div className="terminal-opciones">
                     <label>
                         <input
@@ -140,7 +268,7 @@ export default function MetodoPagoSelector({
                             checked={terminalModo === 'en_sucursal'}
                             onChange={() => setTerminalModo('en_sucursal')}
                         />
-                        <span>Pagar con Terminal física al llegar a la barbería</span>
+                        <span>Pagar al llegar con Terminal Mercado Pago Point o Efectivo</span>
                     </label>
                     <label>
                         <input
@@ -149,7 +277,7 @@ export default function MetodoPagoSelector({
                             checked={terminalModo === 'enviar_terminal'}
                             onChange={() => setTerminalModo('enviar_terminal')}
                         />
-                        <span>Pre-generar orden de cobro en Terminal POS conectada</span>
+                        <span>Pre-generar orden de cobro en Terminal Point conectada</span>
                     </label>
                 </div>
             )}

@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
 import BarberDatePicker from '@/Components/BarberDatePicker';
 import GuiaTipoRostro, { TIPOS_ROSTRO } from '@/Components/GuiaTipoRostro';
-import MetodoPagoSelector from '@/Components/MetodoPagoSelector';
+import MetodoPagoSelector, { calcularMontoAnticipo } from '@/Components/MetodoPagoSelector';
 import APIController from '@/actions/App/Http/Controllers/APIController';
 
 const PASO_INICIAL = 1;
@@ -30,6 +30,7 @@ export default function CitaIndex({
     barberosActivos = [],
     barberoPreferidoId = null,
     diasCerrados = [0],
+    pagoConfig = {},
     hoy = '',
 }) {
     const { auth, misReservaciones = [] } = usePage().props;
@@ -56,6 +57,7 @@ export default function CitaIndex({
     const [cargandoHorarios, setCargandoHorarios] = useState(false);
     const [alertaFormulario, setAlertaFormulario] = useState(null);
     const [guardando, setGuardando] = useState(false);
+    const [tipoCobro, setTipoCobro] = useState('anticipo');
     const [metodoPago, setMetodoPago] = useState('tarjeta_online');
     const [terminalModo, setTerminalModo] = useState('en_sucursal');
     const [tarjeta, setTarjeta] = useState({
@@ -174,10 +176,21 @@ export default function CitaIndex({
         return serviciosSeleccionados.reduce((acc, s) => acc + Number(s.precio || 0), 0);
     }, [serviciosSeleccionados]);
 
+    const montoAnticipoActual = useMemo(() => {
+        return calcularMontoAnticipo(totalServicios, pagoConfig);
+    }, [totalServicios, pagoConfig]);
+
+    const montoAPagarAhora = useMemo(() => {
+        if (metodoPago === 'terminal_pos') return 0;
+        const puedeAnticipo = totalServicios > montoAnticipoActual && montoAnticipoActual > 0;
+        return tipoCobro === 'anticipo' && puedeAnticipo ? montoAnticipoActual : totalServicios;
+    }, [metodoPago, tipoCobro, totalServicios, montoAnticipoActual]);
+
     const reservarCita = async () => {
         if (!datosCompletos || guardando) return;
 
-        if (metodoPago === 'tarjeta_online') {
+        const esMercadoPagoPro = pagoConfig?.driver === 'mercadopago';
+        if (metodoPago === 'tarjeta_online' && !esMercadoPagoPro) {
             const digitos = tarjeta.numero.replace(/\D/g, '');
             if (
                 !tarjeta.titular.trim() ||
@@ -208,9 +221,10 @@ export default function CitaIndex({
                 usuarioId: usuario.id,
                 nombre: usuario.nombreCompleto,
                 servicios: serviciosSeleccionados.map((s) => s.id),
+                tipo_cobro: metodoPago === 'terminal_pos' ? 'total' : tipoCobro,
                 metodo_pago: metodoPago,
                 terminal_modo: terminalModo,
-                ...(metodoPago === 'tarjeta_online'
+                ...(metodoPago === 'tarjeta_online' && !esMercadoPagoPro
                     ? {
                           tarjeta_titular: tarjeta.titular,
                           tarjeta_numero: tarjeta.numero,
@@ -224,16 +238,64 @@ export default function CitaIndex({
 
             if (data?.resultado) {
                 const pago = data.pago;
-                const detallePago =
-                    pago?.estado === 'pagado'
-                        ? `Pago aprobado · Autorización #${pago.codigo_autorizacion} (${pago.marca_tarjeta} •••• ${pago.ultimos_4})`
-                        : `Reserva confirmada · Pago pendiente en Terminal POS (Ref. ${pago?.referencia_bancaria ?? 'POS'})`;
+                const telNegocio = (pagoConfig?.whatsapp_negocio || '5216312487987').replace(/\D/g, '');
+                let htmlDetalle = '';
+
+                if (pago?.metodo === 'transferencia') {
+                    const textoWa = encodeURIComponent(
+                        `Hola! Acabo de agendar mi cita #${data.id} para el ${fecha} a las ${hora} hrs. ` +
+                            `Adjunto mi comprobante SPEI (${pago.tipo_cobro === 'anticipo' ? 'Anticipo' : 'Pago total'} por $${Number(pago.monto).toFixed(2)} MXN). ` +
+                            `Ref: ${pago.referencia_bancaria}`
+                    );
+                    const urlWa = `https://wa.me/${telNegocio}?text=${textoWa}`;
+                    htmlDetalle = `
+                        <p style="margin:0 0 1rem;color:#e8dfd2;">Tu cita <strong>#${data.id}</strong> quedó apartada.</p>
+                        <p style="margin:0 0 1rem;font-size:1.35rem;color:#b9afa1;">
+                            Transfiere <strong style="color:#d4a259;">$${Number(pago.monto).toFixed(2)} MXN</strong> con referencia <strong>${pago.referencia_bancaria}</strong> y envía tu comprobante:
+                        </p>
+                        <a href="${urlWa}" target="_blank" rel="noopener noreferrer"
+                           style="display:inline-block;padding:1rem 1.8rem;border-radius:0.9rem;background:#25d366;color:#111;font-weight:700;text-decoration:none;font-size:1.45rem;">
+                           Enviar Comprobante por WhatsApp
+                        </a>
+                    `;
+                } else if (pago?.link_pago) {
+                    htmlDetalle = `
+                        <p style="margin:0 0 1rem;color:#e8dfd2;">Tu cita <strong>#${data.id}</strong> fue creada.</p>
+                        <p style="margin:0 0 1.2rem;font-size:1.35rem;color:#b9afa1;">
+                            Completa tu pago de <strong style="color:#d4a259;">$${Number(pago.monto).toFixed(2)} MXN</strong> en Mercado Pago:
+                        </p>
+                        <a href="${pago.link_pago}" target="_blank" rel="noopener noreferrer"
+                           style="display:inline-block;padding:1rem 1.8rem;border-radius:0.9rem;background:#009ee3;color:#fff;font-weight:700;text-decoration:none;font-size:1.45rem;">
+                           Ir a Pagar en Mercado Pago
+                        </a>
+                    `;
+                } else if (pago?.estado === 'pagado' || pago?.estado === 'anticipo_pagado') {
+                    const saldoTxt =
+                        Number(pago.saldo_pendiente || 0) > 0
+                            ? `<br/>Saldo restante en barbería: <strong style="color:#d4a259;">$${Number(pago.saldo_pendiente).toFixed(2)} MXN</strong>`
+                            : '<br/>Tu cita está pagada al 100%.';
+                    htmlDetalle = `
+                        <p style="color:#e8dfd2;">Tu cita <strong>#${data.id}</strong> fue creada correctamente.</p>
+                        <p style="font-size:1.35rem;color:#b9afa1;">
+                            Pago aprobado por <strong>$${Number(pago.monto_pagado).toFixed(2)} MXN</strong> · Autorización #${pago.codigo_autorizacion}
+                            ${pago.ultimos_4 ? `(${pago.marca_tarjeta} •••• ${pago.ultimos_4})` : ''}
+                            ${saldoTxt}
+                        </p>
+                    `;
+                } else {
+                    htmlDetalle = `
+                        <p style="color:#e8dfd2;">Tu cita <strong>#${data.id}</strong> fue confirmada.</p>
+                        <p style="font-size:1.35rem;color:#b9afa1;">
+                            Saldo a liquidar en barbería (Terminal Point o Efectivo): <strong style="color:#d4a259;">$${Number(pago?.saldo_pendiente ?? totalServicios).toFixed(2)} MXN</strong>
+                        </p>
+                    `;
+                }
 
                 await Swal.fire({
                     icon: 'success',
                     title: 'Cita Creada',
-                    text: `Tu cita #${data.id} fue creada correctamente. ${detallePago}`,
-                    confirmButtonText: 'OK',
+                    html: htmlDetalle,
+                    confirmButtonText: 'Entendido',
                     background: '#1f1b17',
                     color: '#f5efe6',
                     confirmButtonColor: '#d4a259',
@@ -615,6 +677,9 @@ export default function CitaIndex({
 
                             <MetodoPagoSelector
                                 total={totalServicios}
+                                tipoCobro={tipoCobro}
+                                setTipoCobro={setTipoCobro}
+                                pagoConfig={pagoConfig}
                                 metodoPago={metodoPago}
                                 setMetodoPago={setMetodoPago}
                                 tarjeta={tarjeta}
@@ -632,8 +697,10 @@ export default function CitaIndex({
                                 {guardando
                                     ? 'Procesando...'
                                     : metodoPago === 'tarjeta_online'
-                                      ? `Pagar $${totalServicios.toFixed(2)} y Reservar Cita`
-                                      : 'Reservar Cita (Pago en Terminal)'}
+                                      ? `Pagar $${montoAPagarAhora.toFixed(2)} y Reservar Cita`
+                                      : metodoPago === 'transferencia'
+                                        ? `Reservar y Transferir $${montoAPagarAhora.toFixed(2)} (SPEI)`
+                                        : 'Reservar Cita (Pagar en Barbería)'}
                             </button>
                         </>
                     )}

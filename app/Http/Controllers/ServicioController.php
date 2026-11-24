@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Servicio;
+use App\Services\BitacoraService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -49,7 +50,7 @@ class ServicioController extends Controller
             $rutaImagen = $request->file('imagen')->store('servicios', 'public');
         }
 
-        Servicio::create([
+        $servicio = Servicio::create([
             'nombre' => $validated['nombre'],
             'precio' => $validated['precio'],
             'descripcion' => $validated['descripcion'] ?? null,
@@ -59,6 +60,16 @@ class ServicioController extends Controller
             'recomendacion_rostro' => $validated['recomendacion_rostro'] ?? null,
             'imagen' => $rutaImagen,
         ]);
+
+        BitacoraService::registrar(
+            modulo: 'servicios',
+            accion: 'servicio_creado',
+            descripcion: "Servicio '{$servicio->nombre}' creado con precio \${$servicio->precio} MXN.",
+            detalles: ['nombre' => $servicio->nombre, 'precio' => (float) $servicio->precio, 'activo' => (bool) $servicio->activo],
+            nivel: 'exito',
+            entidadTipo: 'Servicio',
+            entidadId: $servicio->id
+        );
 
         return redirect('/servicios')->with('exito', 'Servicio creado correctamente');
     }
@@ -141,6 +152,16 @@ class ServicioController extends Controller
             'imagen' => $rutaImagen,
         ]);
 
+        BitacoraService::registrar(
+            modulo: 'servicios',
+            accion: 'servicio_actualizado',
+            descripcion: "Servicio '{$servicio->nombre}' actualizado (\${$servicio->precio} MXN).",
+            detalles: ['nombre' => $servicio->nombre, 'precio' => (float) $servicio->precio, 'activo' => (bool) $servicio->activo],
+            nivel: 'info',
+            entidadTipo: 'Servicio',
+            entidadId: $servicio->id
+        );
+
         return redirect('/servicios')->with('exito', 'Servicio actualizado correctamente');
     }
 
@@ -153,6 +174,16 @@ class ServicioController extends Controller
             if ($servicio) {
                 $servicio->activo = ! $servicio->activo;
                 $servicio->save();
+
+                BitacoraService::registrar(
+                    modulo: 'servicios',
+                    accion: 'servicio_estado_cambiado',
+                    descripcion: "Servicio '{$servicio->nombre}' marcado como " . ($servicio->activo ? 'activo' : 'inactivo') . '.',
+                    detalles: ['activo' => (bool) $servicio->activo],
+                    nivel: 'info',
+                    entidadTipo: 'Servicio',
+                    entidadId: $servicio->id
+                );
             }
         }
 
@@ -166,10 +197,22 @@ class ServicioController extends Controller
         if (is_numeric($id)) {
             $servicio = Servicio::find((int) $id);
             if ($servicio) {
+                $nombreEliminado = $servicio->nombre;
+                $idEliminado = $servicio->id;
                 if ($servicio->imagen) {
                     Storage::disk('public')->delete($servicio->imagen);
                 }
                 $servicio->delete();
+
+                BitacoraService::registrar(
+                    modulo: 'servicios',
+                    accion: 'servicio_eliminado',
+                    descripcion: "Servicio '{$nombreEliminado}' (#{$idEliminado}) fue eliminado del catálogo.",
+                    detalles: ['servicio_id' => $idEliminado, 'nombre' => $nombreEliminado],
+                    nivel: 'alerta',
+                    entidadTipo: 'Servicio',
+                    entidadId: $idEliminado
+                );
             }
         }
 

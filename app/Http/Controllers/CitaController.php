@@ -23,6 +23,13 @@ class CitaController extends Controller
             'barberosActivos' => $barberos,
             'barberoPreferidoId' => $request->user()?->barbero_id,
             'diasCerrados' => HorarioLaboral::diasCerrados(),
+            'pagoConfig' => [
+                'driver' => config('payments.default', 'sandbox'),
+                'anticipo_tipo' => config('payments.anticipo.tipo', 'fijo'),
+                'anticipo_valor' => (float) config('payments.anticipo.valor', 100),
+                'spei' => config('payments.spei'),
+                'whatsapp_negocio' => config('payments.whatsapp_negocio'),
+            ],
             'hoy' => now()->toDateString(),
         ]);
     }

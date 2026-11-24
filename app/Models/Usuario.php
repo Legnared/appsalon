@@ -74,6 +74,15 @@ class Usuario extends Authenticatable
         return (bool) $this->admin || $this->rol === 'admin';
     }
 
+    /**
+     * Solo el Administrador técnico del sistema (no barbero/dueño operativo)
+     * tiene permiso de lectura sobre la Bitácora de Auditoría.
+     */
+    public function puedeVerBitacora(): bool
+    {
+        return $this->esAdmin() && ! (bool) $this->es_barbero;
+    }
+
     public function esBarbero(): bool
     {
         return $this->rol === 'barbero' || (bool) $this->es_barbero;

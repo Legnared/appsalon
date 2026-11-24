@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HorarioLaboral;
+use App\Services\BitacoraService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -50,6 +51,15 @@ class HorarioController extends Controller
                 ]
             );
         }
+
+        BitacoraService::registrar(
+            modulo: 'horarios',
+            accion: 'horarios_actualizados',
+            descripcion: 'Se actualizaron los horarios laborales semanales de la barbería.',
+            detalles: ['dias' => $validated['horarios']],
+            nivel: 'info',
+            entidadTipo: 'HorarioLaboral'
+        );
 
         return redirect('/horarios')->with('exito', 'Horarios laborales actualizados correctamente');
     }

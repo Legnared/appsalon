@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
 import BarberoController from '@/actions/App/Http/Controllers/BarberoController';
+import BitacoraController from '@/actions/App/Http/Controllers/BitacoraController';
 import CitaController from '@/actions/App/Http/Controllers/CitaController';
 import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
 import HorarioController from '@/actions/App/Http/Controllers/HorarioController';
@@ -35,6 +36,7 @@ export default function AppSidebar() {
     if (!usuario) return null;
 
     const esAdmin = Boolean(usuario.admin);
+    const puedeVerBitacora = Boolean(usuario.puede_ver_bitacora);
     const esBarbero = !esAdmin && usuario.rol === 'barbero';
     const esCliente = !esAdmin && !esBarbero;
 
@@ -123,6 +125,21 @@ export default function AppSidebar() {
                             </svg>
                             <span>Horarios Laborales</span>
                         </Link>
+
+                        {puedeVerBitacora && (
+                            <Link
+                                href={BitacoraController.index.url()}
+                                className={`sidebar-link ${isPath('/bitacora') ? 'activo' : ''}`}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                </svg>
+                                <span>Bitácora (Solo Lectura)</span>
+                            </Link>
+                        )}
                     </>
                 )}
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ConfirmarCuentaMail;
 use App\Mail\ReestablecerPasswordMail;
 use App\Models\Usuario;
+use App\Services\BitacoraService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,12 +35,31 @@ class AuthController extends Controller
         $usuario = Usuario::where('email', $validated['email'])->first();
 
         if (! $usuario) {
+            BitacoraService::registrar(
+                modulo: 'autenticacion',
+                accion: 'login_fallido',
+                descripcion: "Intento de acceso con email no registrado: {$validated['email']}.",
+                detalles: ['email' => $validated['email'], 'motivo' => 'usuario_no_encontrado', 'actor_label' => $validated['email'], 'actor_rol' => 'visitante'],
+                nivel: 'alerta'
+            );
+
             return back()->withErrors([
                 'email' => 'Usuario no encontrado',
             ])->onlyInput('email');
         }
 
         if (! Hash::check($validated['password'], $usuario->password) || ! $usuario->confirmado) {
+            BitacoraService::registrar(
+                modulo: 'autenticacion',
+                accion: 'login_fallido',
+                descripcion: "Acceso rechazado para {$usuario->email} (password incorrecto o cuenta sin confirmar).",
+                detalles: ['email' => $usuario->email, 'confirmado' => (bool) $usuario->confirmado],
+                nivel: 'alerta',
+                entidadTipo: 'Usuario',
+                entidadId: $usuario->id,
+                actor: $usuario
+            );
+
             return back()->withErrors([
                 'password' => 'Password Incorrecto o tu cuenta no ha sido confirmada',
             ])->onlyInput('email');
@@ -47,6 +67,17 @@ class AuthController extends Controller
 
         Auth::login($usuario);
         $request->session()->regenerate();
+
+        BitacoraService::registrar(
+            modulo: 'autenticacion',
+            accion: 'login_exitoso',
+            descripcion: "Inicio de sesión de {$usuario->nombre_completo} ({$usuario->email}).",
+            detalles: ['email' => $usuario->email, 'rol' => $usuario->rol],
+            nivel: 'info',
+            entidadTipo: 'Usuario',
+            entidadId: $usuario->id,
+            actor: $usuario
+        );
 
         if ($usuario->esAdmin() || $usuario->esBarbero()) {
             return redirect('/admin');
@@ -57,6 +88,20 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $usuario = Auth::user();
+        if ($usuario instanceof Usuario) {
+            BitacoraService::registrar(
+                modulo: 'autenticacion',
+                accion: 'logout',
+                descripcion: "Cierre de sesión de {$usuario->nombre_completo}.",
+                detalles: ['email' => $usuario->email],
+                nivel: 'info',
+                entidadTipo: 'Usuario',
+                entidadId: $usuario->id,
+                actor: $usuario
+            );
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

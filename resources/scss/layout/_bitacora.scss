@@ -1,0 +1,259 @@
+@use 'base/variables' as v;
+@use 'base/mixins' as m;
+
+.bitacora-readonly-banner {
+    margin: 0 0 2rem;
+    padding: 1.2rem 1.6rem;
+    border-radius: 1rem;
+    background: rgba(212, 162, 89, 0.12);
+    border: 1px solid rgba(212, 162, 89, 0.35);
+    color: v.$marfil;
+    font-size: 1.35rem;
+    line-height: 1.5;
+
+    strong {
+        color: v.$laton_hover;
+    }
+}
+
+.bitacora-kpis {
+    @include m.tablet {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.bitacora-filtros {
+    display: grid;
+    gap: 1.2rem;
+    padding: 1.8rem;
+    margin-bottom: 2.2rem;
+    border-radius: 1.3rem;
+    background: linear-gradient(155deg, v.$cuero 0%, #191612 100%);
+    border: 1px solid rgba(212, 162, 89, 0.25);
+
+    @include m.tablet {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .bitacora-filtro-campo {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+
+        label {
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06rem;
+            color: v.$arena;
+        }
+
+        select,
+        input {
+            width: 100%;
+            min-height: 4.2rem;
+            padding: 0.85rem 1.2rem;
+            border-radius: 0.85rem;
+            border: 1px solid rgba(212, 162, 89, 0.26);
+            background-color: rgba(20, 18, 16, 0.85);
+            color: v.$marfil;
+            font-size: 1.45rem;
+            color-scheme: dark;
+        }
+    }
+
+    .bitacora-filtro-acciones {
+        display: flex;
+        align-items: flex-end;
+        gap: 1rem;
+
+        .boton,
+        .boton-secundario {
+            margin: 0;
+            flex: 1;
+            min-height: 4.2rem;
+            padding: 0.9rem 1.4rem;
+            font-size: 1.4rem;
+        }
+    }
+}
+
+.bitacora-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.3rem;
+}
+
+.bitacora-card {
+    padding: 1.6rem 1.8rem;
+    border-radius: 1.2rem;
+    background: linear-gradient(155deg, v.$cuero 0%, #191612 100%);
+    border: 1px solid rgba(212, 162, 89, 0.22);
+    border-left: 4px solid v.$laton;
+
+    &.nivel-exito {
+        border-left-color: #5cd678;
+    }
+
+    &.nivel-alerta {
+        border-left-color: #f0b44c;
+    }
+
+    &.nivel-error {
+        border-left-color: #e65c5c;
+    }
+
+    .bitacora-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .bitacora-badges {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+
+    .bit-nivel-badge {
+        font-size: 1.1rem;
+        font-weight: 700;
+        padding: 0.25rem 0.8rem;
+        border-radius: 999px;
+
+        &.exito {
+            background: rgba(47, 143, 70, 0.22);
+            color: #8df0a5;
+        }
+
+        &.info {
+            background: rgba(37, 150, 190, 0.22);
+            color: #9be3ff;
+        }
+
+        &.alerta {
+            background: rgba(212, 162, 89, 0.24);
+            color: v.$laton_hover;
+        }
+
+        &.error {
+            background: rgba(184, 50, 50, 0.25);
+            color: #ff9e9e;
+        }
+    }
+
+    .bit-modulo-badge {
+        font-size: 1.15rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05rem;
+        color: v.$laton;
+        background: rgba(212, 162, 89, 0.12);
+        padding: 0.25rem 0.8rem;
+        border-radius: 0.5rem;
+    }
+
+    .bit-accion-code {
+        font-family: monospace;
+        font-size: 1.25rem;
+        color: v.$arena;
+    }
+
+    .bit-fecha {
+        font-size: 1.25rem;
+        color: v.$arena;
+        font-family: monospace;
+    }
+
+    .bitacora-desc {
+        margin: 0 0 1rem;
+        font-size: 1.55rem;
+        color: v.$marfil;
+        line-height: 1.45;
+    }
+
+    .bitacora-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        font-size: 1.3rem;
+        color: v.$arena;
+
+        strong {
+            color: v.$marfil;
+        }
+
+        code {
+            font-family: monospace;
+            color: v.$laton_hover;
+        }
+    }
+
+    .bitacora-detalles-wrap {
+        margin-top: 1rem;
+    }
+
+    .bit-detalles-toggle {
+        background: transparent;
+        border: 1px solid rgba(212, 162, 89, 0.35);
+        color: v.$laton_hover;
+        padding: 0.45rem 1rem;
+        border-radius: 0.65rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(212, 162, 89, 0.14);
+        }
+    }
+
+    .bit-detalles-json {
+        margin: 0.9rem 0 0;
+        padding: 1.2rem;
+        border-radius: 0.8rem;
+        background: #12100e;
+        border: 1px solid rgba(212, 162, 89, 0.18);
+        color: #d9cbb8;
+        font-size: 1.25rem;
+        overflow-x: auto;
+        line-height: 1.45;
+    }
+}
+
+.bitacora-paginacion {
+    margin-top: 2.2rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+
+    .bit-page-link {
+        padding: 0.7rem 1.2rem;
+        border-radius: 0.7rem;
+        border: 1px solid rgba(212, 162, 89, 0.28);
+        background: rgba(20, 18, 16, 0.78);
+        color: v.$marfil;
+        font-size: 1.35rem;
+        text-decoration: none;
+
+        &.activo {
+            background: v.$laton;
+            color: v.$carbon;
+            font-weight: 700;
+            border-color: v.$laton;
+        }
+
+        &.deshabilitado {
+            opacity: 0.4;
+            cursor: default;
+        }
+    }
+}

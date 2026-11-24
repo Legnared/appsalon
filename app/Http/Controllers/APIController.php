@@ -8,6 +8,7 @@ use App\Models\HorarioLaboral;
 use App\Models\Pago;
 use App\Models\Servicio;
 use App\Models\Usuario;
+use App\Services\BitacoraService;
 use App\Services\Payments\DTOs\CardPaymentRequestData;
 use App\Services\Payments\DTOs\TerminalPaymentRequestData;
 use App\Services\Payments\PaymentManager;
@@ -102,6 +103,9 @@ class APIController extends Controller
 
     public function guardar(Request $request, PaymentManager $payments): JsonResponse
     {
+        $driverActual = (string) config('payments.default', 'sandbox');
+        $requiereTarjetaDirecta = $request->input('metodo_pago') === 'tarjeta_online' && $driverActual !== 'mercadopago';
+
         $validated = $request->validate([
             'fecha' => ['required', 'date'],
             'hora' => ['required', 'string'],
@@ -109,21 +113,22 @@ class APIController extends Controller
             'para_quien' => ['nullable', 'in:titular,hijo,familiar'],
             'nombre_beneficiario' => ['required_if:para_quien,hijo,familiar', 'nullable', 'string', 'max:80'],
             'servicios' => ['required'],
-            'metodo_pago' => ['nullable', 'in:tarjeta_online,terminal_pos'],
-            'tarjeta_titular' => ['required_if:metodo_pago,tarjeta_online', 'nullable', 'string', 'max:100'],
-            'tarjeta_numero' => ['required_if:metodo_pago,tarjeta_online', 'nullable', 'string', 'min:15', 'max:25'],
-            'tarjeta_expiracion' => ['required_if:metodo_pago,tarjeta_online', 'nullable', 'string', 'max:7'],
-            'tarjeta_cvv' => ['required_if:metodo_pago,tarjeta_online', 'nullable', 'string', 'min:3', 'max:4'],
+            'tipo_cobro' => ['nullable', 'in:anticipo,total'],
+            'metodo_pago' => ['nullable', 'in:tarjeta_online,mercadopago,transferencia,terminal_pos,efectivo'],
+            'tarjeta_titular' => [$requiereTarjetaDirecta ? 'required' : 'nullable', 'string', 'max:100'],
+            'tarjeta_numero' => [$requiereTarjetaDirecta ? 'required' : 'nullable', 'string', 'min:15', 'max:25'],
+            'tarjeta_expiracion' => [$requiereTarjetaDirecta ? 'required' : 'nullable', 'string', 'max:7'],
+            'tarjeta_cvv' => [$requiereTarjetaDirecta ? 'required' : 'nullable', 'string', 'min:3', 'max:4'],
             'terminal_modo' => ['nullable', 'in:en_sucursal,enviar_terminal'],
         ], [
             'fecha.required' => 'La fecha es obligatoria',
             'hora.required' => 'La hora es obligatoria',
             'servicios.required' => 'Debes seleccionar al menos un servicio',
             'nombre_beneficiario.required_if' => 'Indica el nombre de tu hijo o familiar para esta cita',
-            'tarjeta_titular.required_if' => 'El nombre del titular de la tarjeta es obligatorio',
-            'tarjeta_numero.required_if' => 'El número de tarjeta es obligatorio',
-            'tarjeta_expiracion.required_if' => 'La fecha de expiración es obligatoria',
-            'tarjeta_cvv.required_if' => 'El código CVV es obligatorio',
+            'tarjeta_titular.required' => 'El nombre del titular de la tarjeta es obligatorio',
+            'tarjeta_numero.required' => 'El número de tarjeta es obligatorio',
+            'tarjeta_expiracion.required' => 'La fecha de expiración es obligatoria',
+            'tarjeta_cvv.required' => 'El código CVV es obligatorio',
         ]);
 
         $barberoId = ! empty($validated['barberoId']) ? (int) $validated['barberoId'] : null;
@@ -168,13 +173,30 @@ class APIController extends Controller
             ], 422);
         }
 
-        $montoTotal = (float) $serviciosDb->sum('precio');
+        $montoTotal = round((float) $serviciosDb->sum('precio'), 2);
         $moneda = (string) config('payments.currency', 'MXN');
         $metodoPago = $validated['metodo_pago'] ?? 'terminal_pos';
+        $tipoCobro = $validated['tipo_cobro'] ?? 'total';
+
+        // Calcular monto del pago inicial (Anticipo configurable o 100%)
+        if ($tipoCobro === 'anticipo') {
+            $anticipoTipo = (string) config('payments.anticipo.tipo', 'fijo');
+            $anticipoValor = (float) config('payments.anticipo.valor', 100);
+            $montoAnticipo = $anticipoTipo === 'porcentaje'
+                ? round($montoTotal * ($anticipoValor / 100), 2)
+                : $anticipoValor;
+            $montoACobrar = round(min($montoTotal, max(1.0, $montoAnticipo)), 2);
+            if ($montoACobrar >= $montoTotal) {
+                $tipoCobro = 'total';
+            }
+        } else {
+            $montoACobrar = $montoTotal;
+        }
+
         $usuario = $request->user();
         $usuarioId = $usuario?->id ?? $request->input('usuarioId');
 
-        $gateway = $payments->driver();
+        $gateway = $payments->driver($metodoPago === 'mercadopago' ? 'mercadopago' : null);
 
         $resultadoTransaccion = DB::transaction(function () use (
             $validated,
@@ -183,6 +205,8 @@ class APIController extends Controller
             $barberoId,
             $serviciosDb,
             $montoTotal,
+            $montoACobrar,
+            $tipoCobro,
             $moneda,
             $metodoPago,
             $gateway
@@ -213,19 +237,86 @@ class APIController extends Controller
                 ]);
             }
 
-            if ($metodoPago === 'tarjeta_online') {
+            $linkPago = null;
+            $montoPagado = 0.0;
+            $saldoPendiente = $montoTotal;
+            $estadoFinal = 'pendiente';
+            $mensajePago = null;
+            $aprobado = true;
+
+            if ($metodoPago === 'tarjeta_online' || $metodoPago === 'mercadopago') {
                 $paymentResult = $gateway->chargeCard(
                     $cita,
                     new CardPaymentRequestData(
-                        monto: $montoTotal,
+                        monto: $montoACobrar,
                         moneda: $moneda,
-                        titular: (string) $validated['tarjeta_titular'],
-                        numeroTarjeta: (string) $validated['tarjeta_numero'],
-                        expiracion: (string) $validated['tarjeta_expiracion'],
-                        cvv: (string) $validated['tarjeta_cvv'],
+                        titular: (string) ($validated['tarjeta_titular'] ?? $usuario?->nombre_completo ?? 'Cliente'),
+                        numeroTarjeta: (string) ($validated['tarjeta_numero'] ?? ''),
+                        expiracion: (string) ($validated['tarjeta_expiracion'] ?? ''),
+                        cvv: (string) ($validated['tarjeta_cvv'] ?? ''),
                         emailCliente: $usuario?->email,
                     )
                 );
+
+                $aprobado = $paymentResult->aprobado;
+                $mensajePago = $paymentResult->mensaje;
+                $linkPago = $paymentResult->payload['init_point']
+                    ?? $paymentResult->payload['sandbox_init_point']
+                    ?? null;
+
+                if ($paymentResult->estado === 'pagado') {
+                    $montoPagado = $montoACobrar;
+                    $saldoPendiente = round(max(0.0, $montoTotal - $montoPagado), 2);
+                    $estadoFinal = $saldoPendiente > 0 ? 'anticipo_pagado' : 'pagado';
+                } else {
+                    $estadoFinal = $paymentResult->estado;
+                }
+
+                $pago = Pago::create([
+                    'citaId' => $cita->id,
+                    'usuarioId' => $usuarioId,
+                    'monto' => $montoACobrar,
+                    'monto_total' => $montoTotal,
+                    'monto_pagado' => $montoPagado,
+                    'saldo_pendiente' => $saldoPendiente,
+                    'moneda' => $moneda,
+                    'tipo_cobro' => $tipoCobro,
+                    'metodo' => $metodoPago,
+                    'gateway' => $paymentResult->gateway,
+                    'estado' => $estadoFinal,
+                    'referencia_bancaria' => $paymentResult->referenciaBancaria,
+                    'codigo_autorizacion' => $paymentResult->codigoAutorizacion,
+                    'ultimos_4' => $paymentResult->ultimos4,
+                    'marca_tarjeta' => $paymentResult->marcaTarjeta,
+                    'terminal_id' => $paymentResult->terminalId,
+                    'link_pago' => $linkPago,
+                    'respuesta_payload' => $paymentResult->payload,
+                    'pagado_en' => in_array($estadoFinal, ['pagado', 'anticipo_pagado'], true) ? now() : null,
+                ]);
+            } elseif ($metodoPago === 'transferencia') {
+                $referenciaSpei = 'CITA-' . $cita->id . '-' . strtoupper(substr(uniqid(), -4));
+                $mensajePago = $tipoCobro === 'anticipo'
+                    ? "Transfiere tu anticipo de $" . number_format($montoACobrar, 2) . " MXN y envía el comprobante por WhatsApp."
+                    : "Transfiere el total de $" . number_format($montoTotal, 2) . " MXN y envía el comprobante por WhatsApp.";
+
+                $pago = Pago::create([
+                    'citaId' => $cita->id,
+                    'usuarioId' => $usuarioId,
+                    'monto' => $montoACobrar,
+                    'monto_total' => $montoTotal,
+                    'monto_pagado' => 0.0,
+                    'saldo_pendiente' => $montoTotal,
+                    'moneda' => $moneda,
+                    'tipo_cobro' => $tipoCobro,
+                    'metodo' => 'transferencia',
+                    'gateway' => 'spei',
+                    'estado' => 'pendiente',
+                    'referencia_bancaria' => $referenciaSpei,
+                    'respuesta_payload' => [
+                        'spei' => config('payments.spei'),
+                        'monto_esperado' => $montoACobrar,
+                    ],
+                ]);
             } else {
                 $paymentResult = $gateway->initiateTerminalPayment(
                     $cita,
@@ -235,43 +326,63 @@ class APIController extends Controller
                         modo: $validated['terminal_modo'] ?? 'en_sucursal',
                     )
                 );
-            }
 
-            $pago = Pago::create([
-                'citaId' => $cita->id,
-                'usuarioId' => $usuarioId,
-                'monto' => $montoTotal,
-                'moneda' => $moneda,
-                'metodo' => $metodoPago,
-                'gateway' => $paymentResult->gateway,
-                'estado' => $paymentResult->estado,
-                'referencia_bancaria' => $paymentResult->referenciaBancaria,
-                'codigo_autorizacion' => $paymentResult->codigoAutorizacion,
-                'ultimos_4' => $paymentResult->ultimos4,
-                'marca_tarjeta' => $paymentResult->marcaTarjeta,
-                'terminal_id' => $paymentResult->terminalId,
-                'respuesta_payload' => $paymentResult->payload,
-                'pagado_en' => $paymentResult->estado === 'pagado' ? now() : null,
-            ]);
+                $mensajePago = $paymentResult->mensaje;
+
+                $pago = Pago::create([
+                    'citaId' => $cita->id,
+                    'usuarioId' => $usuarioId,
+                    'monto' => $montoTotal,
+                    'monto_total' => $montoTotal,
+                    'monto_pagado' => 0.0,
+                    'saldo_pendiente' => $montoTotal,
+                    'moneda' => $moneda,
+                    'tipo_cobro' => 'total',
+                    'metodo' => $metodoPago,
+                    'gateway' => $paymentResult->gateway,
+                    'estado' => 'pendiente',
+                    'referencia_bancaria' => $paymentResult->referenciaBancaria,
+                    'terminal_id' => $paymentResult->terminalId,
+                    'respuesta_payload' => $paymentResult->payload,
+                ]);
+            }
 
             return [
                 'cita' => $cita,
                 'pago' => $pago,
-                'paymentResult' => $paymentResult,
+                'aprobado' => $aprobado,
+                'mensaje' => $mensajePago,
             ];
         });
 
-        /** @var \App\Services\Payments\DTOs\PaymentResultData $paymentResult */
-        $paymentResult = $resultadoTransaccion['paymentResult'];
         /** @var Cita $cita */
         $cita = $resultadoTransaccion['cita'];
         /** @var Pago $pago */
         $pago = $resultadoTransaccion['pago'];
+        $aprobado = (bool) $resultadoTransaccion['aprobado'];
+        $mensajePago = $resultadoTransaccion['mensaje'];
 
-        if ($metodoPago === 'tarjeta_online' && ! $paymentResult->aprobado) {
+        if (in_array($metodoPago, ['tarjeta_online', 'mercadopago'], true) && ! $aprobado) {
+            BitacoraService::registrar(
+                modulo: 'pagos',
+                accion: 'pago_rechazado',
+                descripcion: "Pago rechazado para cita #{$cita->id} por \${$pago->monto} MXN ({$metodoPago}).",
+                detalles: [
+                    'cita_id' => $cita->id,
+                    'pago_id' => $pago->id,
+                    'metodo' => $metodoPago,
+                    'monto' => (float) $pago->monto,
+                    'referencia_bancaria' => $pago->referencia_bancaria,
+                    'motivo' => $mensajePago,
+                ],
+                nivel: 'error',
+                entidadTipo: 'Pago',
+                entidadId: $pago->id
+            );
+
             return response()->json([
                 'resultado' => false,
-                'mensaje' => $paymentResult->mensaje ?? 'El pago con tarjeta fue rechazado por el banco',
+                'mensaje' => $mensajePago ?? 'El pago con tarjeta fue rechazado por el banco',
                 'pago' => [
                     'id' => $pago->id,
                     'estado' => $pago->estado,
@@ -279,6 +390,51 @@ class APIController extends Controller
                 ],
             ], 422);
         }
+
+        BitacoraService::registrar(
+            modulo: 'citas',
+            accion: 'cita_creada',
+            descripcion: "Cita #{$cita->id} agendada para {$cita->fecha} a las {$cita->hora} hrs.",
+            detalles: [
+                'cita_id' => $cita->id,
+                'fecha' => $cita->fecha,
+                'hora' => $cita->hora,
+                'barbero_id' => $cita->barberoId,
+                'para_quien' => $cita->para_quien,
+                'nombre_beneficiario' => $cita->nombre_beneficiario,
+                'servicios' => $serviciosDb->pluck('nombre')->values()->all(),
+                'monto_total' => (float) $montoTotal,
+            ],
+            nivel: 'exito',
+            entidadTipo: 'Cita',
+            entidadId: $cita->id
+        );
+
+        BitacoraService::registrar(
+            modulo: 'pagos',
+            accion: match ($pago->estado) {
+                'pagado' => 'pago_aprobado',
+                'anticipo_pagado' => 'anticipo_aprobado',
+                default => 'pago_pendiente_registrado',
+            },
+            descripcion: "Pago #{$pago->id} ({$pago->metodo}) para cita #{$cita->id}: estado {$pago->estado}, pagado \${$pago->monto_pagado} / total \${$pago->monto_total}.",
+            detalles: [
+                'cita_id' => $cita->id,
+                'pago_id' => $pago->id,
+                'tipo_cobro' => $pago->tipo_cobro,
+                'metodo' => $pago->metodo,
+                'gateway' => $pago->gateway,
+                'estado' => $pago->estado,
+                'monto_total' => (float) ($pago->monto_total ?? $pago->monto),
+                'monto_pagado' => (float) ($pago->monto_pagado ?? 0),
+                'saldo_pendiente' => (float) ($pago->saldo_pendiente ?? 0),
+                'referencia_bancaria' => $pago->referencia_bancaria,
+                'codigo_autorizacion' => $pago->codigo_autorizacion,
+            ],
+            nivel: in_array($pago->estado, ['pagado', 'anticipo_pagado'], true) ? 'exito' : 'info',
+            entidadTipo: 'Pago',
+            entidadId: $pago->id
+        );
 
         return response()->json([
             'resultado' => [
@@ -289,8 +445,12 @@ class APIController extends Controller
             'pago' => [
                 'id' => $pago->id,
                 'metodo' => $pago->metodo,
+                'tipo_cobro' => $pago->tipo_cobro,
                 'estado' => $pago->estado,
                 'monto' => (float) $pago->monto,
+                'monto_total' => (float) ($pago->monto_total ?? $pago->monto),
+                'monto_pagado' => (float) ($pago->monto_pagado ?? 0),
+                'saldo_pendiente' => (float) ($pago->saldo_pendiente ?? 0),
                 'moneda' => $pago->moneda,
                 'gateway' => $pago->gateway,
                 'referencia_bancaria' => $pago->referencia_bancaria,
@@ -298,7 +458,8 @@ class APIController extends Controller
                 'ultimos_4' => $pago->ultimos_4,
                 'marca_tarjeta' => $pago->marca_tarjeta,
                 'terminal_id' => $pago->terminal_id,
-                'mensaje' => $paymentResult->mensaje,
+                'link_pago' => $pago->link_pago,
+                'mensaje' => $mensajePago,
             ],
         ]);
     }
@@ -317,11 +478,34 @@ class APIController extends Controller
             'hora.required' => 'La hora es obligatoria',
         ]);
 
+        $antes = [
+            'fecha' => $cita->fecha,
+            'hora' => $cita->hora,
+            'barberoId' => $cita->barberoId,
+        ];
+
         $cita->update([
             'fecha' => $validated['fecha'],
             'hora' => $validated['hora'],
             'barberoId' => ! empty($validated['barberoId']) ? (int) $validated['barberoId'] : null,
         ]);
+
+        BitacoraService::registrar(
+            modulo: 'citas',
+            accion: 'cita_reagendada',
+            descripcion: "Cita #{$cita->id} reagendada de {$antes['fecha']} {$antes['hora']} a {$cita->fecha} {$cita->hora}.",
+            detalles: [
+                'antes' => $antes,
+                'despues' => [
+                    'fecha' => $cita->fecha,
+                    'hora' => $cita->hora,
+                    'barberoId' => $cita->barberoId,
+                ],
+            ],
+            nivel: 'alerta',
+            entidadTipo: 'Cita',
+            entidadId: $cita->id
+        );
 
         return response()->json([
             'ok' => true,
@@ -335,9 +519,27 @@ class APIController extends Controller
         $id = $request->input('id');
 
         if ($id) {
-            $cita = Cita::find($id);
+            $cita = Cita::with(['usuario:id,nombre,apellido', 'pago'])->find($id);
             if ($cita) {
+                $resumenCita = [
+                    'cita_id' => $cita->id,
+                    'fecha' => $cita->fecha,
+                    'hora' => $cita->hora,
+                    'cliente' => $cita->usuario?->nombre_completo,
+                    'pago_estado' => $cita->pago?->estado,
+                    'monto_pagado' => $cita->pago?->monto_pagado,
+                ];
                 $cita->delete();
+
+                BitacoraService::registrar(
+                    modulo: 'citas',
+                    accion: 'cita_eliminada',
+                    descripcion: "Cita #{$resumenCita['cita_id']} ({$resumenCita['fecha']} {$resumenCita['hora']}) fue eliminada.",
+                    detalles: $resumenCita,
+                    nivel: 'alerta',
+                    entidadTipo: 'Cita',
+                    entidadId: (int) $resumenCita['cita_id']
+                );
             }
         }
 
