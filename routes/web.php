@@ -35,18 +35,23 @@ Route::middleware('auth')->group(function () {
 
     // API de Citas y Servicios
     Route::get('/api/servicios', [APIController::class, 'index'])->name('api.servicios.index');
+    Route::get('/api/disponibilidad', [APIController::class, 'disponibilidad'])->name('api.disponibilidad');
     Route::post('/api/citas', [APIController::class, 'guardar'])->name('api.citas.guardar');
+    Route::post('/api/citas/{cita}/reagendar', [APIController::class, 'reagendar'])->middleware('admin')->name('api.citas.reagendar');
     Route::post('/api/eliminar', [APIController::class, 'eliminar'])->middleware('admin')->name('api.citas.eliminar');
-    Route::post('/api/pagos/{pago}/terminal', [PagoController::class, 'cobrarEnTerminal'])->middleware('admin')->name('api.pagos.terminal');
+    Route::post('/api/pagos/{pago}/terminal', [PagoController::class, 'cobrarEnTerminal'])->middleware('staff')->name('api.pagos.terminal');
 });
 
 // Webhook Bancario / Terminal POS (multi-gateway)
 Route::post('/api/webhooks/pagos/{gateway}', [PagoWebhookController::class, 'handle'])->name('api.pagos.webhook');
 
-// Panel de Administración y CRUD de Servicios
-Route::middleware(['auth', 'admin'])->group(function () {
+// Agenda compartida (Admin ve todos / Barbero ve solo sus citas)
+Route::middleware(['auth', 'staff'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+});
 
+// Panel de Administración Exclusivo Dueño (Servicios, Barberos, Clientes)
+Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/servicios', [ServicioController::class, 'index'])->name('servicios.index');
     Route::get('/servicios/crear', [ServicioController::class, 'showCrear'])->name('servicios.crear');
     Route::post('/servicios/crear', [ServicioController::class, 'crear'])->name('servicios.store');

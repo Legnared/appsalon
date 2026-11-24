@@ -24,15 +24,30 @@ function formatearFechaMX(fechaStr) {
     });
 }
 
-export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
+export default function CitaIndex({
+    serviciosIniciales = [],
+    barberosActivos = [],
+    barberoPreferidoId = null,
+    hoy = '',
+}) {
     const { auth } = usePage().props;
     const usuario = auth?.user;
+
+    const barberoInicial = useMemo(() => {
+        if (barberoPreferidoId && barberosActivos.some((b) => b.id === barberoPreferidoId)) {
+            return barberoPreferidoId;
+        }
+        return barberosActivos[0]?.id ?? null;
+    }, [barberoPreferidoId, barberosActivos]);
 
     const [paso, setPaso] = useState(PASO_INICIAL);
     const [servicios, setServicios] = useState(serviciosIniciales);
     const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
+    const [barberoId, setBarberoId] = useState(barberoInicial);
     const [fecha, setFecha] = useState('');
     const [hora, setHora] = useState('');
+    const [slotsHorario, setSlotsHorario] = useState([]);
+    const [cargandoHorarios, setCargandoHorarios] = useState(false);
     const [alertaFormulario, setAlertaFormulario] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const [metodoPago, setMetodoPago] = useState('tarjeta_online');
@@ -58,6 +73,41 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
         };
     }, [serviciosIniciales]);
 
+    // Consultar disponibilidad real (margen 60 min) cuando cambia fecha o barbero
+    useEffect(() => {
+        if (!fecha) {
+            setSlotsHorario([]);
+            return;
+        }
+
+        let cancelado = false;
+        setCargandoHorarios(true);
+
+        const query = { fecha };
+        if (barberoId) query.barbero_id = barberoId;
+
+        axios
+            .get(APIController.disponibilidad.url({ query }))
+            .then((res) => {
+                if (cancelado) return;
+                const nuevosSlots = res.data?.slots ?? [];
+                setSlotsHorario(nuevosSlots);
+                if (hora && !nuevosSlots.some((s) => s.hora === hora && s.disponible)) {
+                    setHora('');
+                }
+            })
+            .catch(() => {
+                if (!cancelado) setSlotsHorario([]);
+            })
+            .finally(() => {
+                if (!cancelado) setCargandoHorarios(false);
+            });
+
+        return () => {
+            cancelado = true;
+        };
+    }, [fecha, barberoId]);
+
     const mostrarAlertaTemporal = (mensaje, tipo = 'error') => {
         if (timerRef.current) clearTimeout(timerRef.current);
         setAlertaFormulario({ mensaje, tipo });
@@ -79,11 +129,13 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
     const handleFechaSeleccionada = (valor) => {
         if (!valor) {
             setFecha('');
+            setHora('');
             return;
         }
         const dia = new Date(valor).getUTCDay();
         if (dia === 0) {
             setFecha('');
+            setHora('');
             mostrarAlertaTemporal(
                 'Domingos No Trabajamos, Elije otro día de Lunes a Sábado',
                 'error'
@@ -93,30 +145,21 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
         }
     };
 
-    const handleHoraChange = (e) => {
-        const valor = e.target.value;
-        if (!valor) {
-            setHora('');
-            return;
-        }
-        const horaNum = parseInt(valor.split(':')[0], 10);
-        if (horaNum < 10 || horaNum > 19) {
-            setHora('');
-            mostrarAlertaTemporal('Hora No Válida', 'error');
-        } else {
-            setHora(valor);
-        }
-    };
+    const barberoSeleccionado = useMemo(() => {
+        return barberosActivos.find((b) => b.id === barberoId) ?? null;
+    }, [barberosActivos, barberoId]);
 
     const datosCompletos = useMemo(() => {
+        const requiereBarbero = barberosActivos.length > 0;
         return Boolean(
             usuario?.id &&
             usuario?.nombreCompleto &&
             fecha &&
             hora &&
-            serviciosSeleccionados.length > 0
+            serviciosSeleccionados.length > 0 &&
+            (!requiereBarbero || barberoId)
         );
-    }, [usuario, fecha, hora, serviciosSeleccionados]);
+    }, [usuario, fecha, hora, serviciosSeleccionados, barberosActivos, barberoId]);
 
     const totalServicios = useMemo(() => {
         return serviciosSeleccionados.reduce((acc, s) => acc + Number(s.precio || 0), 0);
@@ -127,7 +170,12 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
 
         if (metodoPago === 'tarjeta_online') {
             const digitos = tarjeta.numero.replace(/\D/g, '');
-            if (!tarjeta.titular.trim() || digitos.length < 15 || tarjeta.expiracion.length < 5 || tarjeta.cvv.length < 3) {
+            if (
+                !tarjeta.titular.trim() ||
+                digitos.length < 15 ||
+                tarjeta.expiracion.length < 5 ||
+                tarjeta.cvv.length < 3
+            ) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Datos de tarjeta incompletos',
@@ -145,6 +193,7 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
             const payload = {
                 fecha,
                 hora,
+                barberoId,
                 usuarioId: usuario.id,
                 nombre: usuario.nombreCompleto,
                 servicios: serviciosSeleccionados.map((s) => s.id),
@@ -210,7 +259,7 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
             <Head title="Crear Nueva Cita" />
 
             <h1 className="nombre-pagina">Crear Nueva Cita</h1>
-            <p className="descripcion-pagina">Elige tus servicios y coloca tus datos</p>
+            <p className="descripcion-pagina">Elige tus servicios, barbero y horario disponible</p>
 
             <Barra />
 
@@ -230,7 +279,7 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                         data-paso="2"
                         onClick={() => setPaso(2)}
                     >
-                        Información Cita
+                        Barbero y Fecha
                     </button>
                     <button
                         className={paso === 3 ? 'actual' : ''}
@@ -238,7 +287,7 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                         data-paso="3"
                         onClick={() => setPaso(3)}
                     >
-                        Resumen
+                        Resumen y Pago
                     </button>
                 </nav>
 
@@ -285,12 +334,14 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                 </div>
 
                 <div id="paso-2" className={`seccion ${paso === 2 ? 'mostrar' : ''}`}>
-                    <h2>Tus Datos y Cita</h2>
-                    <p className="text-center">Coloca tus datos y fecha de tu cita</p>
+                    <h2>Tu Barbero y Horario</h2>
+                    <p className="text-center">
+                        Elige con quién atenderte; respetamos 1 hora entre citas para evitar empalmes
+                    </p>
 
                     <form className="formulario" onSubmit={(e) => e.preventDefault()}>
                         <div className="campo">
-                            <label htmlFor="nombre">Nombre</label>
+                            <label htmlFor="nombre">Cliente</label>
                             <input
                                 id="nombre"
                                 type="text"
@@ -299,6 +350,44 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                                 disabled
                             />
                         </div>
+
+                        {barberosActivos.length > 0 && (
+                            <div className="campo campo-columna">
+                                <label>Selecciona tu Barbero</label>
+                                <div className="selector-barberos-grid">
+                                    {barberosActivos.map((barbero) => {
+                                        const activo = barberoId === barbero.id;
+                                        return (
+                                            <button
+                                                key={barbero.id}
+                                                type="button"
+                                                className={`barbero-option-card ${activo ? 'activo' : ''}`}
+                                                onClick={() => setBarberoId(barbero.id)}
+                                            >
+                                                <div className="barbero-avatar">
+                                                    {barbero.foto_url ? (
+                                                        <img
+                                                            src={barbero.foto_url}
+                                                            alt={barbero.nombre_completo}
+                                                        />
+                                                    ) : (
+                                                        <span>
+                                                            {(barbero.nombre || 'B').charAt(0).toUpperCase()}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="barbero-option-info">
+                                                    <strong>{barbero.nombre_completo}</strong>
+                                                    <span>
+                                                        {barbero.especialidad || 'Barbero profesional'}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="campo">
                             <label htmlFor="fecha">Fecha</label>
@@ -318,14 +407,32 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                             />
                         </div>
 
-                        <div className="campo">
-                            <label htmlFor="hora">Hora</label>
-                            <input
-                                id="hora"
-                                type="time"
-                                value={hora}
-                                onChange={handleHoraChange}
-                            />
+                        <div className="campo campo-columna">
+                            <label>Horario Disponible (10:00 – 19:00 · bloques de 1 hora)</label>
+                            {!fecha ? (
+                                <p className="horarios-ayuda">
+                                    Selecciona primero una fecha para consultar horarios libres.
+                                </p>
+                            ) : cargandoHorarios ? (
+                                <p className="horarios-ayuda">Consultando disponibilidad...</p>
+                            ) : (
+                                <div className="horarios-grid">
+                                    {slotsHorario.map((slot) => (
+                                        <button
+                                            key={slot.hora}
+                                            type="button"
+                                            disabled={!slot.disponible}
+                                            className={`horario-slot ${hora === slot.hora ? 'activo' : ''} ${!slot.disponible ? 'ocupado' : ''}`}
+                                            onClick={() => setHora(slot.hora)}
+                                        >
+                                            <span>{slot.hora}</span>
+                                            <small>
+                                                {slot.disponible ? 'Disponible' : 'Ocupado'}
+                                            </small>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {alertaFormulario && (
@@ -342,7 +449,7 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                 >
                     {!datosCompletos ? (
                         <div className="alerta error">
-                            Faltan datos de Servicios, Fecha u Hora
+                            Faltan datos de Servicios, Barbero, Fecha u Hora
                         </div>
                     ) : (
                         <>
@@ -360,6 +467,11 @@ export default function CitaIndex({ serviciosIniciales = [], hoy = '' }) {
                             <p>
                                 <span>Nombre:</span> {usuario?.nombreCompleto}
                             </p>
+                            {barberoSeleccionado && (
+                                <p>
+                                    <span>Barbero:</span> {barberoSeleccionado.nombre_completo}
+                                </p>
+                            )}
                             <p>
                                 <span>Fecha:</span> {formatearFechaMX(fecha)}
                             </p>

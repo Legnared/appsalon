@@ -10,5 +10,5 @@
 ### Fase 2: Cartera de Clientes y Prospectos
 - [x] **T009.6:** Implementar `ClienteController` y vistas `Pages/Clientes/*` (filtro por barbero, buscador, alta de clientes/prospectos e historial).
 
-### Fase 3: Portal del Barbero y Selección de Barbero en Cita (Próxima iteración)
-- [ ] **T009.7:** Habilitar acceso del rol `barbero` a su propia agenda y clientes, y selector de barbero en `/cita`.
+### Fase 3: Portal del Barbero, Regla Anti-Empalme 60 min y Reagendado Admin
+- [x] **T009.7:** Habilitar acceso del rol `barbero` a su propia agenda, selector de barbero + grilla de horarios con bloqueo anti-empalme de 60 minutos en `/cita`, y reagendado exclusivo para Admin en `/admin`.

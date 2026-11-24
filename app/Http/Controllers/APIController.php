@@ -6,6 +6,7 @@ use App\Models\Cita;
 use App\Models\CitaServicio;
 use App\Models\Pago;
 use App\Models\Servicio;
+use App\Models\Usuario;
 use App\Services\Payments\DTOs\CardPaymentRequestData;
 use App\Services\Payments\DTOs\TerminalPaymentRequestData;
 use App\Services\Payments\PaymentManager;
@@ -16,9 +17,62 @@ use Illuminate\Support\Facades\DB;
 
 class APIController extends Controller
 {
+    private const MINUTOS_EMPALME = 60;
+
     public function index(): JsonResponse
     {
         return response()->json(Servicio::where('activo', true)->orderBy('id')->get());
+    }
+
+    public function disponibilidad(Request $request): JsonResponse
+    {
+        $fecha = (string) $request->query('fecha', '');
+        $barberoId = $request->query('barbero_id');
+
+        $horariosBase = [];
+        for ($h = 10; $h <= 19; $h++) {
+            $horariosBase[] = sprintf('%02d:00', $h);
+        }
+
+        if ($fecha === '' || ! strtotime($fecha)) {
+            return response()->json([
+                'slots' => array_map(fn ($h) => ['hora' => $h, 'disponible' => true], $horariosBase),
+            ]);
+        }
+
+        $query = Cita::where('fecha', $fecha);
+        if (is_numeric($barberoId)) {
+            $query->where('barberoId', (int) $barberoId);
+        }
+
+        $horasOcupadasMin = $query->pluck('hora')
+            ->map(fn ($hora) => $this->horaAMinutos((string) $hora))
+            ->filter(fn ($m) => $m !== null)
+            ->values()
+            ->all();
+
+        $slots = array_map(function (string $horaSlot) use ($horasOcupadasMin) {
+            $slotMin = $this->horaAMinutos($horaSlot);
+            $ocupado = false;
+
+            foreach ($horasOcupadasMin as $ocupadaMin) {
+                if (abs($slotMin - $ocupadaMin) < self::MINUTOS_EMPALME) {
+                    $ocupado = true;
+                    break;
+                }
+            }
+
+            return [
+                'hora' => $horaSlot,
+                'disponible' => ! $ocupado,
+            ];
+        }, $horariosBase);
+
+        return response()->json([
+            'fecha' => $fecha,
+            'barbero_id' => is_numeric($barberoId) ? (int) $barberoId : null,
+            'slots' => $slots,
+        ]);
     }
 
     public function guardar(Request $request, PaymentManager $payments): JsonResponse
@@ -26,6 +80,7 @@ class APIController extends Controller
         $validated = $request->validate([
             'fecha' => ['required', 'date'],
             'hora' => ['required', 'string'],
+            'barberoId' => ['nullable', 'integer', 'exists:usuarios,id'],
             'servicios' => ['required'],
             'metodo_pago' => ['nullable', 'in:tarjeta_online,terminal_pos'],
             'tarjeta_titular' => ['required_if:metodo_pago,tarjeta_online', 'nullable', 'string', 'max:100'],
@@ -42,6 +97,16 @@ class APIController extends Controller
             'tarjeta_expiracion.required_if' => 'La fecha de expiración es obligatoria',
             'tarjeta_cvv.required_if' => 'El código CVV es obligatorio',
         ]);
+
+        $barberoId = ! empty($validated['barberoId']) ? (int) $validated['barberoId'] : null;
+
+        // Validar empalme de 60 minutos para el barbero seleccionado
+        if ($this->hayEmpalme($validated['fecha'], $validated['hora'], $barberoId)) {
+            return response()->json([
+                'resultado' => false,
+                'mensaje' => 'Ese horario ya está ocupado con el barbero seleccionado (se requiere al menos 1 hora entre citas). Elige otro horario u otro barbero.',
+            ], 422);
+        }
 
         $rawServicios = $request->input('servicios');
         $idServicios = is_array($rawServicios)
@@ -71,11 +136,11 @@ class APIController extends Controller
 
         $gateway = $payments->driver();
 
-        // Para pago con tarjeta en línea, creamos la cita + pago y validamos el cobro
         $resultadoTransaccion = DB::transaction(function () use (
             $validated,
             $usuarioId,
             $usuario,
+            $barberoId,
             $serviciosDb,
             $montoTotal,
             $moneda,
@@ -86,7 +151,13 @@ class APIController extends Controller
                 'fecha' => $validated['fecha'],
                 'hora' => $validated['hora'],
                 'usuarioId' => $usuarioId,
+                'barberoId' => $barberoId,
             ]);
+
+            if ($usuario && ! $usuario->barbero_id && $barberoId) {
+                $usuario->barbero_id = $barberoId;
+                $usuario->save();
+            }
 
             foreach ($serviciosDb as $servicio) {
                 CitaServicio::create([
@@ -185,6 +256,33 @@ class APIController extends Controller
         ]);
     }
 
+    /**
+     * Exclusivo Admin: permite ajustar fecha, hora o barbero ante cualquier imprevisto.
+     */
+    public function reagendar(Request $request, Cita $cita): JsonResponse
+    {
+        $validated = $request->validate([
+            'fecha' => ['required', 'date'],
+            'hora' => ['required', 'string'],
+            'barberoId' => ['nullable', 'integer', 'exists:usuarios,id'],
+        ], [
+            'fecha.required' => 'La fecha es obligatoria',
+            'hora.required' => 'La hora es obligatoria',
+        ]);
+
+        $cita->update([
+            'fecha' => $validated['fecha'],
+            'hora' => $validated['hora'],
+            'barberoId' => ! empty($validated['barberoId']) ? (int) $validated['barberoId'] : null,
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Cita reagendada correctamente por el administrador',
+            'cita' => $cita->fresh(['barbero:id,nombre,apellido']),
+        ]);
+    }
+
     public function eliminar(Request $request): RedirectResponse
     {
         $id = $request->input('id');
@@ -197,5 +295,47 @@ class APIController extends Controller
         }
 
         return back();
+    }
+
+    private function hayEmpalme(string $fecha, string $hora, ?int $barberoId, ?int $excluirCitaId = null): bool
+    {
+        $nuevoMin = $this->horaAMinutos($hora);
+        if ($nuevoMin === null) {
+            return false;
+        }
+
+        $query = Cita::where('fecha', $fecha);
+        if ($barberoId !== null) {
+            $query->where('barberoId', $barberoId);
+        } else {
+            // Si no hay barberos registrados todavía, valida contra citas sin barbero
+            $hayBarberos = Usuario::barberos()->where('activo', true)->exists();
+            if ($hayBarberos) {
+                return false;
+            }
+        }
+
+        if ($excluirCitaId !== null) {
+            $query->where('id', '!=', $excluirCitaId);
+        }
+
+        foreach ($query->pluck('hora') as $horaExistente) {
+            $existenteMin = $this->horaAMinutos((string) $horaExistente);
+            if ($existenteMin !== null && abs($nuevoMin - $existenteMin) < self::MINUTOS_EMPALME) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function horaAMinutos(string $hora): ?int
+    {
+        $partes = explode(':', trim($hora));
+        if (count($partes) < 2 || ! is_numeric($partes[0]) || ! is_numeric($partes[1])) {
+            return null;
+        }
+
+        return ((int) $partes[0] * 60) + (int) $partes[1];
     }
 }

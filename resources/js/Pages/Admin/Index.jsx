@@ -29,7 +29,13 @@ function formatearFechaLarga(fechaStr) {
     return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-export default function AdminIndex({ citas = [], fecha = '' }) {
+export default function AdminIndex({
+    citas = [],
+    fecha = '',
+    barberos = [],
+    barberoFiltro = 'todos',
+    soloBarbero = false,
+}) {
     const [busqueda, setBusqueda] = useState('');
     const [cargandoFecha, setCargandoFecha] = useState(false);
 
@@ -49,12 +55,13 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
         if (!q) return citas;
         return citas.filter((cita) => {
             const enCliente = (cita.cliente || '').toLowerCase().includes(q);
+            const enBarbero = (cita.barbero || '').toLowerCase().includes(q);
             const enEmail = (cita.email || '').toLowerCase().includes(q);
             const enTel = (cita.telefono || '').toLowerCase().includes(q);
             const enServicios = (cita.servicios || []).some((s) =>
                 (s.nombre || '').toLowerCase().includes(q)
             );
-            return enCliente || enEmail || enTel || enServicios;
+            return enCliente || enBarbero || enEmail || enTel || enServicios;
         });
     }, [citas, busqueda]);
 
@@ -70,20 +77,93 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
         return acc;
     }, 0);
 
-    const navegarAFecha = (nuevaFecha) => {
-        if (!nuevaFecha || nuevaFecha === fecha) return;
-        router.get(
-            AdminController.index.url({ query: { fecha: nuevaFecha } }),
-            {},
-            {
-                only: ['citas', 'fecha'],
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-                onStart: () => setCargandoFecha(true),
-                onFinish: () => setCargandoFecha(false),
-            }
-        );
+    const navegarAgenda = (nuevaFecha, nuevoBarbero = barberoFiltro) => {
+        if (!nuevaFecha) return;
+        if (nuevaFecha === fecha && String(nuevoBarbero) === String(barberoFiltro)) return;
+
+        const query = { fecha: nuevaFecha };
+        if (!soloBarbero && nuevoBarbero && nuevoBarbero !== 'todos') {
+            query.barbero_id = nuevoBarbero;
+        }
+
+        router.get(AdminController.index.url({ query }), {}, {
+            only: ['citas', 'fecha', 'barberoFiltro'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => setCargandoFecha(true),
+            onFinish: () => setCargandoFecha(false),
+        });
+    };
+
+    const handleReagendar = async (cita) => {
+        const opcionesBarbero = [
+            '<option value="">Sin barbero asignado</option>',
+            ...barberos.map(
+                (b) =>
+                    `<option value="${b.id}" ${Number(cita.barberoId) === Number(b.id) ? 'selected' : ''}>${b.nombre_completo || `${b.nombre} ${b.apellido}`}</option>`
+            ),
+        ].join('');
+
+        const horaCorta = (cita.hora || '10:00').slice(0, 5);
+
+        const { value: formValues, isConfirmed } = await Swal.fire({
+            title: `Ajustar / Reagendar Cita #${cita.id}`,
+            html: `
+                <div style="text-align:left;display:flex;flex-direction:column;gap:10px;font-size:1.4rem;">
+                    <label style="color:#b9afa1;">Fecha</label>
+                    <input id="swal-fecha" type="date" value="${cita.fecha || fecha}" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;color-scheme:dark;" />
+                    <label style="color:#b9afa1;">Hora</label>
+                    <input id="swal-hora" type="time" value="${horaCorta}" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;color-scheme:dark;" />
+                    <label style="color:#b9afa1;">Barbero</label>
+                    <select id="swal-barbero" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;">
+                        ${opcionesBarbero}
+                    </select>
+                </div>
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar Ajuste',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d4a259',
+            cancelButtonColor: '#28221c',
+            background: '#1f1b17',
+            color: '#f5efe6',
+            preConfirm: () => ({
+                fecha: document.getElementById('swal-fecha')?.value || fecha,
+                hora: document.getElementById('swal-hora')?.value || horaCorta,
+                barberoId: document.getElementById('swal-barbero')?.value || null,
+            }),
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+            await axios.post(
+                APIController.reagendar.url({ cita: cita.id }),
+                formValues
+            );
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Cita ajustada',
+                text: 'La fecha, hora o barbero se actualizaron correctamente.',
+                background: '#1f1b17',
+                color: '#f5efe6',
+                confirmButtonColor: '#d4a259',
+            });
+
+            router.reload({ only: ['citas'] });
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo reagendar',
+                text: error?.response?.data?.message || 'Verifica los datos ingresados',
+                background: '#1f1b17',
+                color: '#f5efe6',
+                confirmButtonColor: '#b83232',
+            });
+        }
     };
 
     const handleCobrarTerminal = async (cita) => {
@@ -157,10 +237,16 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
 
     return (
         <>
-            <Head title="Panel de Administración" />
+            <Head title={soloBarbero ? 'Mi Agenda de Barbero' : 'Panel de Administración'} />
 
-            <h1 className="nombre-pagina">Panel de Administración</h1>
-            <p className="descripcion-pagina">Agenda diaria, pagos y control de citas de la barbería</p>
+            <h1 className="nombre-pagina">
+                {soloBarbero ? 'Mi Agenda de Barbero' : 'Panel de Administración'}
+            </h1>
+            <p className="descripcion-pagina">
+                {soloBarbero
+                    ? 'Tus citas asignadas del día y cobro en Terminal POS'
+                    : 'Agenda diaria, pagos y control de citas de la barbería'}
+            </p>
 
             <Barra />
 
@@ -177,7 +263,7 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                         <button
                             type="button"
                             className="btn-agenda"
-                            onClick={() => navegarAFecha(sumarDias(fecha, -1))}
+                            onClick={() => navegarAgenda(sumarDias(fecha, -1))}
                             title="Día anterior"
                         >
                             &laquo; Anterior
@@ -185,21 +271,21 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                         <button
                             type="button"
                             className={`btn-agenda ${esHoy ? 'activo' : ''}`}
-                            onClick={() => navegarAFecha(hoyStr)}
+                            onClick={() => navegarAgenda(hoyStr)}
                         >
                             Hoy
                         </button>
                         <button
                             type="button"
                             className={`btn-agenda ${fecha === mananaStr ? 'activo' : ''}`}
-                            onClick={() => navegarAFecha(mananaStr)}
+                            onClick={() => navegarAgenda(mananaStr)}
                         >
                             Mañana
                         </button>
                         <button
                             type="button"
                             className="btn-agenda"
-                            onClick={() => navegarAFecha(sumarDias(fecha, 1))}
+                            onClick={() => navegarAgenda(sumarDias(fecha, 1))}
                             title="Día siguiente"
                         >
                             Siguiente &raquo;
@@ -213,9 +299,29 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                         <BarberDatePicker
                             id="fecha"
                             value={fecha}
-                            onChange={navegarAFecha}
+                            onChange={(nueva) => navegarAgenda(nueva)}
                         />
                     </div>
+
+                    {!soloBarbero && barberos.length > 0 && (
+                        <div className="agenda-campo">
+                            <label htmlFor="filtro-agenda-barbero">Barbero</label>
+                            <select
+                                id="filtro-agenda-barbero"
+                                value={barberoFiltro}
+                                onChange={(e) => navegarAgenda(fecha, e.target.value)}
+                            >
+                                <option value="todos">Todos los barberos</option>
+                                <option value="sin_asignar">Sin barbero asignado</option>
+                                {barberos.map((b) => (
+                                    <option key={b.id} value={b.id}>
+                                        {b.nombre_completo || `${b.nombre} ${b.apellido}`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div className="agenda-campo">
                         <label htmlFor="buscar-cita">Filtrar en este día</label>
                         <input
@@ -274,6 +380,11 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                                         <p>
                                             Cliente: <span>{cita.cliente}</span>
                                         </p>
+                                        {cita.barbero && (
+                                            <p>
+                                                Barbero: <span>{cita.barbero}</span>
+                                            </p>
+                                        )}
                                         <p>
                                             Email: <span>{cita.email}</span>
                                         </p>
@@ -340,14 +451,26 @@ export default function AdminIndex({ citas = [], fecha = '' }) {
                                                 </button>
                                             )}
 
-                                            <form onSubmit={(e) => handleEliminar(e, cita.id)}>
-                                                <input type="hidden" name="id" value={cita.id} />
-                                                <input
-                                                    type="submit"
-                                                    className="boton-eliminar"
-                                                    value="Eliminar"
-                                                />
-                                            </form>
+                                            {!soloBarbero && (
+                                                <button
+                                                    type="button"
+                                                    className="boton-secundario"
+                                                    onClick={() => handleReagendar(cita)}
+                                                >
+                                                    Reagendar
+                                                </button>
+                                            )}
+
+                                            {!soloBarbero && (
+                                                <form onSubmit={(e) => handleEliminar(e, cita.id)}>
+                                                    <input type="hidden" name="id" value={cita.id} />
+                                                    <input
+                                                        type="submit"
+                                                        className="boton-eliminar"
+                                                        value="Eliminar"
+                                                    />
+                                                </form>
+                                            )}
                                         </div>
                                     </li>
                                 );

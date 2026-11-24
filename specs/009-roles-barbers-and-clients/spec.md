@@ -7,9 +7,10 @@ Transformar **AppSalon** en una plataforma multi-barbero administrada por roles 
   - Permitir al Dueño/Admin **ver todos los barberos**, **crear nuevos barberos**, **editar sus datos (foto, especialidad, teléfono, acceso, contraseña opcional)** y **activar/desactivar** barberos desde `/barberos`.
 - **Fase 2 (Cartera de Clientes y Prospectos):**
   - Ver todos los clientes del salón filtrables por Barbero, buscar por nombre/teléfono/email, ver historial de citas y crear nuevos clientes o prospectos asignados a un barbero desde `/clientes`.
-- **Fase 3 (Portal del Barbero + Selección de Barbero en `/cita`):**
-  - Permitir al Barbero iniciar sesión y acceder únicamente a **su propia agenda diaria y sus clientes asignados**.
-  - Permitir al Cliente elegir con qué Barbero desea agendar su cita en `/cita`.
+- **Fase 3 (Portal del Barbero + Selección de Barbero con Regla Anti-Empalme de 60 Minutos + Reagendado Admin):**
+  - Permitir al Barbero iniciar sesión y acceder únicamente a **su propia agenda diaria** (con cobro en Terminal POS).
+  - En `/cita` (Paso 2), el cliente selecciona visualmente a su **Barbero**, elige la fecha (L–S) y escoge un horario en la grilla de `10:00` a `19:00` consultando `GET /api/disponibilidad` en tiempo real: se bloquea cualquier horario a menos de **60 minutos** de otra cita del mismo barbero (validado también en backend en `APIController@guardar`).
+  - Exclusivamente el **Administrador** puede **Reagendar / Cambiar Barbero** de una cita existente (`POST /api/citas/{cita}/reagendar`) desde `/admin` ante cualquier imprevisto.
 
 ## 2. Evolución de Esquema (Migración Aditiva)
 Archivo: `database/migrations/2026_01_01_000007_add_roles_and_barbers_support.php`

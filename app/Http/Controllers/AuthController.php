@@ -48,7 +48,7 @@ class AuthController extends Controller
         Auth::login($usuario);
         $request->session()->regenerate();
 
-        if ($usuario->admin) {
+        if ($usuario->esAdmin() || $usuario->esBarbero()) {
             return redirect('/admin');
         }
 
