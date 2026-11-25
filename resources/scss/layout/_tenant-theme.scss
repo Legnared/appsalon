@@ -1,0 +1,537 @@
+// =========================================================================
+// Tema Dinámico Completo por Tenant (Paleta derivada de --tenant-accent)
+// Danny's (#d4a259) conserva data-custom-theme="false" (0 regresiones).
+// Cualquier barbería con color propio activa data-custom-theme="true".
+// =========================================================================
+
+html[data-custom-theme='true'] {
+    --t-accent: var(--tenant-accent, #2f80ed);
+    --t-accent-bright: color-mix(in srgb, var(--t-accent) 74%, #ffffff);
+    --t-on-accent: var(--tenant-on-accent, #ffffff);
+    --t-bg: color-mix(in srgb, var(--t-accent) 11%, #090d14);
+    --t-bg-glow: color-mix(in srgb, var(--t-accent) 24%, #0d1320);
+    --t-surface: color-mix(in srgb, var(--t-accent) 10%, #111827);
+    --t-surface-2: color-mix(in srgb, var(--t-accent) 16%, #182234);
+    --t-border: color-mix(in srgb, var(--t-accent) 38%, transparent);
+    --t-border-strong: color-mix(in srgb, var(--t-accent) 68%, transparent);
+    --t-soft: color-mix(in srgb, var(--t-accent) 18%, transparent);
+    --t-soft-hover: color-mix(in srgb, var(--t-accent) 28%, transparent);
+
+    body {
+        background-color: var(--t-bg);
+    }
+
+    // Fondos principales (Shell + Login)
+    .app-shell,
+    .contenedor-app {
+        background: radial-gradient(circle at top right, var(--t-bg-glow) 0%, var(--t-bg) 64%);
+    }
+
+    // Línea decorativa bajo el título principal de cada página
+    .nombre-pagina::after {
+        background: linear-gradient(90deg, transparent, var(--t-accent-bright), transparent);
+    }
+
+    // Hero / Sidebar background sin tinte sepia cálido
+    .contenedor-app .imagen,
+    .app-sidebar {
+        background-color: var(--t-bg);
+        border-color: var(--t-border);
+
+        picture img {
+            filter: saturate(0.88) contrast(1.06) brightness(0.72);
+        }
+    }
+
+    .app-sidebar .sidebar-full-bg::after,
+    .contenedor-app .imagen::after {
+        background: linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--t-bg) 52%, transparent) 0%,
+            color-mix(in srgb, var(--t-bg) 78%, transparent) 50%,
+            color-mix(in srgb, var(--t-bg) 96%, transparent) 100%
+        );
+    }
+
+    // Sidebar marca, links y footer
+    .app-sidebar .sidebar-brand {
+        border-bottom-color: var(--t-border);
+
+        .sidebar-brand-content {
+            background: color-mix(in srgb, var(--t-surface) 76%, transparent);
+            border-color: var(--t-border);
+
+            .brand-tag {
+                color: var(--t-accent-bright);
+            }
+        }
+    }
+
+    .app-sidebar .sidebar-nav .sidebar-link {
+        background: color-mix(in srgb, var(--t-surface) 72%, transparent);
+        border-color: var(--t-border);
+
+        &:hover {
+            background: var(--t-soft-hover);
+            border-color: var(--t-accent-bright);
+            color: #ffffff;
+        }
+
+        &.activo {
+            background: linear-gradient(135deg, var(--t-accent) 0%, color-mix(in srgb, var(--t-accent) 76%, #000000) 100%);
+            border-color: var(--t-accent-bright);
+            color: var(--t-on-accent);
+            box-shadow: 0 8px 22px color-mix(in srgb, var(--t-accent) 36%, transparent);
+
+            svg {
+                color: var(--t-on-accent);
+            }
+        }
+    }
+
+    .app-sidebar .sidebar-footer {
+        border-top-color: var(--t-border);
+        background: color-mix(in srgb, var(--t-bg) 82%, transparent);
+
+        .sidebar-avatar {
+            border-color: var(--t-accent-bright);
+            background: var(--t-soft);
+            color: var(--t-accent-bright);
+        }
+    }
+
+    // Panel de Control de Agenda (/admin)
+    .agenda-control {
+        background: linear-gradient(155deg, var(--t-surface-2) 0%, var(--t-surface) 100%);
+        border-color: var(--t-border-strong);
+
+        .agenda-control-header {
+            border-bottom-color: var(--t-border);
+        }
+
+        .agenda-etiqueta {
+            color: var(--t-accent-bright);
+        }
+
+        .agenda-nav-rapida .btn-agenda {
+            background-color: color-mix(in srgb, var(--t-bg) 78%, #000000);
+            border-color: var(--t-border);
+            color: #f5efe6;
+
+            &:hover {
+                background-color: var(--t-soft-hover);
+                border-color: var(--t-accent-bright);
+                color: #ffffff;
+            }
+
+            &.activo {
+                background-color: var(--t-accent);
+                border-color: var(--t-accent-bright);
+                color: var(--t-on-accent);
+                box-shadow: 0 6px 16px color-mix(in srgb, var(--t-accent) 36%, transparent);
+            }
+        }
+
+        .agenda-campo {
+            input,
+            select {
+                background-color: color-mix(in srgb, var(--t-bg) 82%, #000000);
+                border-color: var(--t-border);
+
+                &:focus {
+                    border-color: var(--t-accent-bright);
+                    box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-accent) 28%, transparent);
+                }
+            }
+        }
+    }
+
+    // Datepicker personalizado
+    .barber-datepicker {
+        .barber-datepicker-trigger {
+            background-color: color-mix(in srgb, var(--t-bg) 82%, #000000);
+            border-color: var(--t-border);
+
+            .icono-calendario {
+                color: var(--t-accent-bright);
+            }
+
+            &:hover,
+            &.abierto {
+                border-color: var(--t-accent-bright);
+                background-color: var(--t-surface);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-accent) 26%, transparent);
+            }
+        }
+
+        .barber-datepicker-popover {
+            background: linear-gradient(160deg, var(--t-surface-2) 0%, var(--t-bg) 100%);
+            border-color: var(--t-border-strong);
+
+            .rdp-root {
+                --rdp-accent-color: var(--t-accent);
+                --rdp-accent-background-color: var(--t-soft);
+                --rdp-today-color: var(--t-accent-bright);
+            }
+
+            .rdp-weekday {
+                color: var(--t-accent-bright);
+            }
+
+            .rdp-button_previous,
+            .rdp-button_next {
+                border-color: var(--t-border);
+                background-color: color-mix(in srgb, var(--t-bg) 80%, #000000);
+                color: var(--t-accent-bright);
+
+                &:hover {
+                    background-color: var(--t-soft-hover);
+                    border-color: var(--t-accent-bright);
+                }
+            }
+
+            .rdp-chevron {
+                fill: var(--t-accent-bright);
+            }
+
+            .rdp-day_button:hover:not(:disabled) {
+                background-color: var(--t-soft-hover);
+            }
+
+            .rdp-selected .rdp-day_button {
+                background: linear-gradient(135deg, var(--t-accent-bright) 0%, var(--t-accent) 100%);
+                color: var(--t-on-accent);
+                border-color: var(--t-accent-bright);
+            }
+
+            .rdp-today:not(.rdp-selected) .rdp-day_button {
+                border-color: var(--t-accent-bright);
+                color: var(--t-accent-bright);
+            }
+
+            .barber-datepicker-footer {
+                border-top-color: var(--t-border);
+
+                .btn-ir-hoy {
+                    border-color: var(--t-border-strong);
+                    background-color: var(--t-soft);
+                    color: var(--t-accent-bright);
+
+                    &:hover {
+                        background-color: var(--t-accent);
+                        color: var(--t-on-accent);
+                    }
+                }
+            }
+        }
+    }
+
+    // KPIs (alta especificidad para sobrescribir _admin.scss)
+    .resumen-kpi-grid .kpi-card {
+        background: linear-gradient(150deg, var(--t-surface-2) 0%, var(--t-surface) 100%);
+        border-color: var(--t-border-strong);
+
+        .kpi-valor {
+            color: var(--t-accent-bright);
+        }
+    }
+
+    // Bitácora
+    .bitacora-readonly-banner {
+        background: var(--t-soft);
+        border-color: var(--t-border-strong);
+
+        strong {
+            color: var(--t-accent-bright);
+        }
+    }
+
+    .bitacora-filtros {
+        background: linear-gradient(155deg, var(--t-surface-2) 0%, var(--t-surface) 100%);
+        border-color: var(--t-border);
+
+        .bitacora-filtro-campo {
+            select,
+            input {
+                background-color: color-mix(in srgb, var(--t-bg) 82%, #000000);
+                border-color: var(--t-border);
+            }
+        }
+    }
+
+    // Horarios Laborales (/horarios)
+    .horarios-config-form .horario-dia-card {
+        background: linear-gradient(155deg, var(--t-surface-2) 0%, var(--t-surface) 100%);
+        border-color: var(--t-border);
+        border-left-color: var(--t-accent-bright);
+
+        &.cerrado {
+            border-left-color: rgba(185, 175, 161, 0.45);
+        }
+
+        .horario-switch {
+            color: var(--t-accent-bright);
+
+            input[type='checkbox'] {
+                accent-color: var(--t-accent);
+            }
+        }
+
+        .horario-dia-campos {
+            border-top-color: var(--t-border);
+
+            .agenda-campo {
+                input,
+                select {
+                    background-color: color-mix(in srgb, var(--t-bg) 82%, #000000);
+                    border-color: var(--t-border);
+
+                    &:focus {
+                        border-color: var(--t-accent-bright);
+                        box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-accent) 26%, transparent);
+                    }
+                }
+            }
+        }
+    }
+
+    // Bloque de Pagos (Paso 3 de Cita)
+    .pagos-bloque {
+        background: linear-gradient(155deg, var(--t-surface-2) 0%, var(--t-surface) 100%);
+        border-color: var(--t-border-strong);
+
+        .pagos-total-banner {
+            border-bottom-color: var(--t-border);
+
+            .pagos-total-monto {
+                color: var(--t-accent-bright);
+            }
+        }
+
+        .pagos-tipo-cobro {
+            .pagos-subtitulo {
+                color: var(--t-accent-bright);
+            }
+
+            .tipo-cobro-btn {
+                background-color: color-mix(in srgb, var(--t-bg) 80%, #000000);
+                border-color: var(--t-border);
+
+                &:hover {
+                    border-color: var(--t-accent-bright);
+                }
+
+                &.activo {
+                    border-color: var(--t-accent-bright);
+                    background: var(--t-soft);
+
+                    strong {
+                        color: var(--t-accent-bright);
+                    }
+                }
+            }
+        }
+    }
+
+    .estado-vacio {
+        background: color-mix(in srgb, var(--t-surface) 55%, transparent);
+        border-color: var(--t-border);
+    }
+
+    // Botón flotante de accesibilidad (A+)
+    .a11y-toggle {
+        background: var(--t-surface-2);
+        border-color: var(--t-border-strong);
+        color: var(--t-accent-bright);
+        box-shadow: 0 8px 22px color-mix(in srgb, var(--t-accent) 26%, rgba(0, 0, 0, 0.45));
+
+        &:hover,
+        &.activo {
+            background: var(--t-accent);
+            border-color: var(--t-accent-bright);
+            color: var(--t-on-accent);
+        }
+    }
+
+    // Móvil TopBar & BottomTabBar
+    .mobile-top-bar,
+    .bottom-tab-bar {
+        background: color-mix(in srgb, var(--t-surface) 94%, transparent);
+        border-color: var(--t-border);
+    }
+
+    .mobile-top-bar .mobile-brand,
+    .mobile-hero-caption span,
+    .bottom-tab-bar .bottom-tab-item.activo,
+    .bottom-tab-bar .bottom-tab-link.activo {
+        color: var(--t-accent-bright);
+    }
+
+    // Botones principales y secundarios
+    .boton:not(.boton-eliminar):not(.boton-secundario):not(.boton-cerrar-sesion) {
+        background-color: var(--t-accent);
+        border-color: var(--t-accent);
+        color: var(--t-on-accent);
+
+        &:hover {
+            background-color: var(--t-accent-bright);
+            border-color: var(--t-accent-bright);
+            color: var(--t-on-accent);
+            box-shadow: 0 10px 24px color-mix(in srgb, var(--t-accent) 38%, transparent);
+        }
+    }
+
+    .boton-secundario,
+    .boton-cerrar-sesion {
+        background-color: var(--t-surface-2);
+        border-color: var(--t-border);
+
+        &:hover {
+            background-color: var(--t-soft-hover);
+            border-color: var(--t-accent-bright);
+        }
+    }
+
+    // Tarjetas, Citas, Servicios, SuperAdmin y Formularios
+    .formulario,
+    .barra,
+    .tenant-card,
+    .superadmin-section,
+    .citas li,
+    .servicios li,
+    .servicio,
+    .barbero-card,
+    .cliente-card,
+    .horario-card,
+    .sin-citas,
+    .marca-barberia,
+    .appsalon-loader-card {
+        background: linear-gradient(155deg, var(--t-surface-2) 0%, var(--t-surface) 100%);
+        border-color: var(--t-border);
+    }
+
+    .formulario.superadmin-form {
+        background: color-mix(in srgb, var(--t-bg) 68%, transparent);
+        border-color: var(--t-border);
+    }
+
+    .superadmin-checkbox input,
+    .feature-toggle-card input[type='checkbox'] {
+        accent-color: var(--t-accent);
+    }
+
+    .servicio.seleccionado,
+    .feature-toggle-card.activo,
+    .metodo-card.seleccionado {
+        border-color: var(--t-accent-bright);
+        background: var(--t-soft);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--t-accent) 38%, transparent);
+    }
+
+    .tabs button {
+        background-color: var(--t-surface-2);
+        border-color: var(--t-border);
+
+        &.actual {
+            background-color: var(--t-accent);
+            color: var(--t-on-accent);
+            border-color: var(--t-accent-bright);
+        }
+    }
+
+    .campo input,
+    .campo select,
+    .campo textarea {
+        background-color: color-mix(in srgb, var(--t-bg) 85%, #000000);
+        border-color: var(--t-border);
+
+        &:focus {
+            border-color: var(--t-accent-bright);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-accent) 28%, transparent);
+        }
+    }
+
+    // Textos y acentos destacados
+    .marca-etiqueta,
+    .precio-servicio,
+    .superadmin-section h3,
+    .feature-cat,
+    .res-count,
+    .acciones a,
+    .citas li span,
+    .servicios li span,
+    .total span,
+    .tenant-pill.plan {
+        color: var(--t-accent-bright);
+    }
+
+    .tenant-pill.plan {
+        background: var(--t-soft);
+        border-color: var(--t-border-strong);
+    }
+
+    .appsalon-loader-card {
+        border-color: var(--t-border-strong);
+
+        .ring-spinner {
+            border-top-color: var(--t-accent-bright);
+            border-right-color: var(--t-accent);
+        }
+
+        .loader-brand {
+            color: var(--t-accent-bright);
+        }
+    }
+
+    // Scrollbars
+    .no-scrollbar {
+        scrollbar-color: var(--t-border) transparent;
+
+        &::-webkit-scrollbar-thumb {
+            background: var(--t-border);
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background: var(--t-accent-bright);
+        }
+    }
+}
+
+.color-presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 0.7rem;
+}
+
+.color-preset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(20, 18, 16, 0.8);
+    color: rgba(245, 239, 230, 0.88);
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    &.activo {
+        border-color: #ffffff;
+        background: rgba(255, 255, 255, 0.12);
+        font-weight: 700;
+    }
+}
+
+.color-preset-dot {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}

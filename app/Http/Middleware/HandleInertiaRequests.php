@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\Cita;
+use App\Services\FeatureManager;
+use App\Services\TenantContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,6 +37,8 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
+            'tenant' => fn () => app(TenantContext::class)->frontendPayload(),
+            'features' => fn () => app(FeatureManager::class)->allForCurrentTenant(),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,

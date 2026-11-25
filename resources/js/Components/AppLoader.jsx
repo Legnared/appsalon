@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 export default function AppLoader() {
+    const { tenant } = usePage().props;
+    const marca = tenant?.nombre || "Danny's BarberShop";
+    const logoUrl = tenant?.logo_url || '/img/icono.png';
     const [visible, setVisible] = useState(false);
     const timerRef = useRef(null);
 
@@ -30,13 +33,13 @@ export default function AppLoader() {
     if (!visible) return null;
 
     return (
-        <div className="appsalon-loader-overlay" role="status" aria-live="polite" aria-label="Cargando Danny's BarberShop">
+        <div className="appsalon-loader-overlay" role="status" aria-live="polite" aria-label={`Cargando ${marca}`}>
             <div className="appsalon-loader-card">
                 <div className="appsalon-loader-ring">
                     <span className="ring-spinner" aria-hidden="true" />
-                    <img src="/img/icono.png" alt="Danny's BarberShop" className="loader-favicon" />
+                    <img src={logoUrl} alt={marca} className="loader-favicon" />
                 </div>
-                <strong className="loader-brand">Danny&apos;s BarberShop</strong>
+                <strong className="loader-brand">{marca}</strong>
                 <span className="loader-sub">Preparando tu experiencia...</span>
             </div>
         </div>

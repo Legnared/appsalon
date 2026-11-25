@@ -15,14 +15,17 @@ class AdminUsuarioSeeder extends Seeder
         $email = env('INITIAL_ADMIN_EMAIL', 'admin@appsalon.test');
         $password = env('INITIAL_ADMIN_PASSWORD', 'admin123');
 
-        Usuario::updateOrCreate(
+        Usuario::withoutGlobalScope('tenant')->updateOrCreate(
             ['email' => $email],
             [
+                'tenant_id' => null,
                 'nombre' => 'Administrador',
                 'apellido' => 'AppSalon',
                 'telefono' => '4430000000',
                 'password' => $password,
                 'admin' => true,
+                'rol' => 'admin',
+                'es_barbero' => false,
                 'confirmado' => true,
                 'token' => null,
             ]

@@ -2,19 +2,24 @@
 
 namespace Database\Seeders;
 
+use App\Models\Tenant;
 use App\Models\Usuario;
 use Illuminate\Database\Seeder;
 
 class BarberDaniSeeder extends Seeder
 {
     /**
-     * Registra a Barber Dani como Dueño/Administrador y Barbero activo.
+     * Registra a Barber Dani como Dueño/Administrador y Barbero activo en su tenant (Danny's).
      */
     public function run(): void
     {
-        Usuario::updateOrCreate(
-            ['email' => 'dani@appsalon.test'],
+        $tenantId = Tenant::where('slug', 'dannys')->value('id')
+            ?? Tenant::orderBy('id')->value('id');
+
+        Usuario::withoutGlobalScope('tenant')->updateOrCreate(
+            ['email' => 'dani@appsalon.test', 'tenant_id' => $tenantId],
             [
+                'tenant_id' => $tenantId,
                 'nombre' => 'Barber Dani',
                 'apellido' => '',
                 'telefono' => '+52 1 631 248 7987',

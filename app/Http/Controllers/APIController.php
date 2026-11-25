@@ -12,6 +12,7 @@ use App\Services\BitacoraService;
 use App\Services\Payments\DTOs\CardPaymentRequestData;
 use App\Services\Payments\DTOs\TerminalPaymentRequestData;
 use App\Services\Payments\PaymentManager;
+use App\Services\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -101,9 +102,10 @@ class APIController extends Controller
         ]);
     }
 
-    public function guardar(Request $request, PaymentManager $payments): JsonResponse
+    public function guardar(Request $request, PaymentManager $payments, TenantContext $tenantContext): JsonResponse
     {
-        $driverActual = (string) config('payments.default', 'sandbox');
+        $tenantPayments = $tenantContext->paymentConfig();
+        $driverActual = (string) ($tenantPayments['driver'] ?? config('payments.default', 'sandbox'));
         $requiereTarjetaDirecta = $request->input('metodo_pago') === 'tarjeta_online' && $driverActual !== 'mercadopago';
 
         $validated = $request->validate([
@@ -174,14 +176,14 @@ class APIController extends Controller
         }
 
         $montoTotal = round((float) $serviciosDb->sum('precio'), 2);
-        $moneda = (string) config('payments.currency', 'MXN');
+        $moneda = (string) ($tenantPayments['currency'] ?? config('payments.currency', 'MXN'));
         $metodoPago = $validated['metodo_pago'] ?? 'terminal_pos';
         $tipoCobro = $validated['tipo_cobro'] ?? 'total';
 
-        // Calcular monto del pago inicial (Anticipo configurable o 100%)
+        // Calcular monto del pago inicial (Anticipo configurable por tenant o 100%)
         if ($tipoCobro === 'anticipo') {
-            $anticipoTipo = (string) config('payments.anticipo.tipo', 'fijo');
-            $anticipoValor = (float) config('payments.anticipo.valor', 100);
+            $anticipoTipo = (string) ($tenantPayments['anticipo_tipo'] ?? config('payments.anticipo.tipo', 'fijo'));
+            $anticipoValor = (float) ($tenantPayments['anticipo_valor'] ?? config('payments.anticipo.valor', 100));
             $montoAnticipo = $anticipoTipo === 'porcentaje'
                 ? round($montoTotal * ($anticipoValor / 100), 2)
                 : $anticipoValor;
@@ -209,7 +211,8 @@ class APIController extends Controller
             $tipoCobro,
             $moneda,
             $metodoPago,
-            $gateway
+            $gateway,
+            $tenantPayments
         ) {
             $paraQuien = $validated['para_quien'] ?? 'titular';
             $nombreBeneficiario = $paraQuien === 'titular'
@@ -313,7 +316,7 @@ class APIController extends Controller
                     'estado' => 'pendiente',
                     'referencia_bancaria' => $referenciaSpei,
                     'respuesta_payload' => [
-                        'spei' => config('payments.spei'),
+                        'spei' => $tenantPayments['spei'] ?? config('payments.spei'),
                         'monto_esperado' => $montoACobrar,
                     ],
                 ]);

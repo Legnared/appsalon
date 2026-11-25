@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reestablece tu contraseña - Danny's BarberShop</title>
+    <title>Reestablece tu contraseña - {{ $marca ?? config('app.name') }}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#141210;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#f5efe6;">
     @php
         $enlace = url('/reestablecer?token=' . urlencode($token));
+        $nombreMarca = $marca ?? config('app.name', "Danny's BarberShop");
     @endphp
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#141210;padding:32px 16px;">
         <tr>
@@ -19,7 +20,7 @@
                                 EST. BARBER SHOP
                             </p>
                             <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px;color:#f5efe6;font-weight:700;">
-                                Danny's BarberShop
+                                {{ $nombreMarca }}
                             </h1>
                             <p style="margin:6px 0 0;font-size:13px;color:#b9afa1;">
                                 Recuperación de Contraseña
@@ -33,7 +34,7 @@
                                 Hola, {{ $nombre }}
                             </h2>
                             <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#e4ddd2;">
-                                Has solicitado reestablecer la contraseña de tu cuenta en <strong style="color:#d4a259;">Danny's BarberShop</strong>. Presiona el siguiente botón para crear una nueva contraseña de forma segura:
+                                Has solicitado reestablecer la contraseña de tu cuenta en <strong style="color:#d4a259;">{{ $nombreMarca }}</strong>. Presiona el siguiente botón para crear una nueva contraseña de forma segura:
                             </p>
 
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:26px 0;">
@@ -62,7 +63,7 @@
                     <tr>
                         <td style="padding:16px 32px;text-align:center;background-color:#161310;border-top:1px solid #2e261d;">
                             <p style="margin:0;font-size:12px;color:#8e8477;">
-                                © {{ date('Y') }} Danny's BarberShop. Todos los derechos reservados.
+                                © {{ date('Y') }} {{ $nombreMarca }}. Todos los derechos reservados.
                             </p>
                         </td>
                     </tr>

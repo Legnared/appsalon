@@ -37,6 +37,7 @@ class BitacoraService
             }
 
             BitacoraEvento::create([
+                'tenant_id' => app(TenantContext::class)->id() ?? $usuario?->tenant_id,
                 'modulo' => $modulo,
                 'accion' => $accion,
                 'nivel' => in_array($nivel, ['info', 'exito', 'alerta', 'error'], true) ? $nivel : 'info',

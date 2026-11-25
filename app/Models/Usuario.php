@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,13 +12,14 @@ use Illuminate\Notifications\Notifiable;
 
 class Usuario extends Authenticatable
 {
-    use Notifiable;
+    use BelongsToTenant, Notifiable;
 
     protected $table = 'usuarios';
 
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'nombre',
         'apellido',
         'email',
@@ -81,6 +83,16 @@ class Usuario extends Authenticatable
     public function puedeVerBitacora(): bool
     {
         return $this->esAdmin() && ! (bool) $this->es_barbero;
+    }
+
+    public function allowsGlobalSuperAdmin(): bool
+    {
+        return true;
+    }
+
+    public function isExplicitGlobalSuperAdmin(): bool
+    {
+        return $this->esAdmin() && ! (bool) $this->es_barbero && $this->tenant_id === null;
     }
 
     public function esBarbero(): bool

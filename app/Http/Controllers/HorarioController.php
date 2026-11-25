@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\HorarioLaboral;
 use App\Services\BitacoraService;
+use App\Services\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,6 +34,8 @@ class HorarioController extends Controller
             'horarios.*.hora_cierre.date_format' => 'Formato de hora de cierre inválido (HH:MM)',
         ]);
 
+        $tenantId = app(TenantContext::class)->id();
+
         foreach ($validated['horarios'] as $item) {
             if ($item['abierto'] && $item['hora_cierre'] <= $item['hora_apertura']) {
                 return back()->withErrors([
@@ -41,7 +44,10 @@ class HorarioController extends Controller
             }
 
             HorarioLaboral::updateOrCreate(
-                ['dia_semana' => (int) $item['dia_semana']],
+                [
+                    'tenant_id' => $tenantId,
+                    'dia_semana' => (int) $item['dia_semana'],
+                ],
                 [
                     'nombre_dia' => $item['nombre_dia'],
                     'abierto' => (bool) $item['abierto'],

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Servicio;
+use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 
 class CatalogoBarberiaSeeder extends Seeder
@@ -95,15 +96,21 @@ class CatalogoBarberiaSeeder extends Seeder
             ],
         ];
 
+        $tenantId = Tenant::where('slug', 'dannys')->value('id')
+            ?? Tenant::orderBy('id')->value('id');
+
         $nombresCatalogo = array_column($servicios, 'nombre');
 
-        // Eliminar servicios viejos de prueba que no pertenecen al catálogo profesional
-        Servicio::whereNotIn('nombre', $nombresCatalogo)->delete();
+        // Eliminar solo servicios viejos de prueba dentro del tenant de Danny's (nunca tocar otros tenants)
+        Servicio::withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->whereNotIn('nombre', $nombresCatalogo)
+            ->delete();
 
         foreach ($servicios as $servicio) {
-            Servicio::updateOrCreate(
-                ['nombre' => $servicio['nombre']],
-                $servicio
+            Servicio::withoutGlobalScope('tenant')->updateOrCreate(
+                ['tenant_id' => $tenantId, 'nombre' => $servicio['nombre']],
+                array_merge($servicio, ['tenant_id' => $tenantId])
             );
         }
     }

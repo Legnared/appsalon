@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Servicio extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'servicios';
 
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'nombre',
         'precio',
         'descripcion',

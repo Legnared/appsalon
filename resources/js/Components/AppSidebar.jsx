@@ -7,7 +7,10 @@ import BitacoraController from '@/actions/App/Http/Controllers/BitacoraControlle
 import CitaController from '@/actions/App/Http/Controllers/CitaController';
 import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
 import HorarioController from '@/actions/App/Http/Controllers/HorarioController';
+import MarcaController from '@/actions/App/Http/Controllers/MarcaController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
+import SuperAdminTenantController from '@/actions/App/Http/Controllers/SuperAdminTenantController';
+import useFeature from '@/hooks/useFeature';
 
 export async function confirmarCerrarSesion() {
     const result = await Swal.fire({
@@ -31,6 +34,10 @@ export async function confirmarCerrarSesion() {
 export default function AppSidebar() {
     const { url, props } = usePage();
     const usuario = props?.auth?.user;
+    const tenant = props?.tenant;
+    const marca = tenant?.nombre || "Danny's BarberShop";
+    const logoUrl = tenant?.logo_url || '/img/icono.png';
+    const heroUrl = tenant?.hero_url || '/img/1.webp';
     const misReservaciones = props?.misReservaciones ?? [];
 
     if (!usuario) return null;
@@ -39,6 +46,8 @@ export default function AppSidebar() {
     const puedeVerBitacora = Boolean(usuario.puede_ver_bitacora);
     const esBarbero = !esAdmin && usuario.rol === 'barbero';
     const esCliente = !esAdmin && !esBarbero;
+    const tieneMultiBarbero = useFeature('multi_barbero', true);
+    const tieneCrmClientes = useFeature('crm_clientes', true);
 
     const isPath = (prefix) => url.startsWith(prefix);
     const rolLabel = esAdmin ? 'Dueño / Admin' : esBarbero ? 'Barbero' : 'Cliente';
@@ -48,16 +57,21 @@ export default function AppSidebar() {
         <aside className="app-sidebar" aria-label="Menú lateral">
             <div className="sidebar-full-bg" aria-hidden="true">
                 <picture>
-                    <source srcSet="/img/1.webp" type="image/webp" />
-                    <img src="/img/1.jpg" alt="" />
+                    {heroUrl.endsWith('.webp') && <source srcSet={heroUrl} type="image/webp" />}
+                    <img src={heroUrl === '/img/1.webp' ? '/img/1.jpg' : heroUrl} alt="" />
                 </picture>
             </div>
 
             <div className="sidebar-brand">
                 <div className="sidebar-brand-content">
-                    <span className="brand-tag">EST. BARBER SHOP</span>
-                    <strong className="brand-title">Danny&apos;s BarberShop</strong>
-                    <span className="brand-role">{rolLabel}</span>
+                    <div className="brand-header-row">
+                        <img src={logoUrl} alt={marca} className="brand-logo-badge" />
+                        <div className="brand-text-col">
+                            <span className="brand-tag">EST. BARBER SHOP</span>
+                            <strong className="brand-title">{marca}</strong>
+                            <span className="brand-role">{rolLabel}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -77,29 +91,33 @@ export default function AppSidebar() {
                             <span>Agenda de Citas</span>
                         </Link>
 
-                        <Link
-                            href={BarberoController.index.url()}
-                            className={`sidebar-link ${isPath('/barberos') ? 'activo' : ''}`}
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
-                            <span>Equipo de Barberos</span>
-                        </Link>
+                        {tieneMultiBarbero && (
+                            <Link
+                                href={BarberoController.index.url()}
+                                className={`sidebar-link ${isPath('/barberos') ? 'activo' : ''}`}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                                <span>Equipo de Barberos</span>
+                            </Link>
+                        )}
 
-                        <Link
-                            href={ClienteController.index.url()}
-                            className={`sidebar-link ${isPath('/clientes') ? 'activo' : ''}`}
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            <span>Clientes y Prospectos</span>
-                        </Link>
+                        {tieneCrmClientes && (
+                            <Link
+                                href={ClienteController.index.url()}
+                                className={`sidebar-link ${isPath('/clientes') ? 'activo' : ''}`}
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                <span>Clientes y Prospectos</span>
+                            </Link>
+                        )}
 
                         <Link
                             href={ServicioController.index.url()}
@@ -126,19 +144,44 @@ export default function AppSidebar() {
                             <span>Horarios Laborales</span>
                         </Link>
 
+                        <Link
+                            href={MarcaController.index.url()}
+                            className={`sidebar-link ${isPath('/mi-marca') ? 'activo' : ''}`}
+                        >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <span>Mi Marca y Logo</span>
+                        </Link>
+
                         {puedeVerBitacora && (
-                            <Link
-                                href={BitacoraController.index.url()}
-                                className={`sidebar-link ${isPath('/bitacora') ? 'activo' : ''}`}
-                            >
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                    <polyline points="14 2 14 8 20 8" />
-                                    <line x1="16" y1="13" x2="8" y2="13" />
-                                    <line x1="16" y1="17" x2="8" y2="17" />
-                                </svg>
-                                <span>Bitácora (Solo Lectura)</span>
-                            </Link>
+                            <>
+                                <Link
+                                    href={SuperAdminTenantController.index.url()}
+                                    className={`sidebar-link ${isPath('/super-admin') ? 'activo' : ''}`}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                        <polyline points="9 22 9 12 15 12 15 22" />
+                                    </svg>
+                                    <span>Super-Admin SaaS</span>
+                                </Link>
+
+                                <Link
+                                    href={BitacoraController.index.url()}
+                                    className={`sidebar-link ${isPath('/bitacora') ? 'activo' : ''}`}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                        <line x1="16" y1="13" x2="8" y2="13" />
+                                        <line x1="16" y1="17" x2="8" y2="17" />
+                                    </svg>
+                                    <span>Bitácora (Solo Lectura)</span>
+                                </Link>
+                            </>
                         )}
                     </>
                 )}

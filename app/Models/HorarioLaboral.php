@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
 class HorarioLaboral extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'horarios_laborales';
 
     public $timestamps = false;
 
     protected $fillable = [
+        'tenant_id',
         'dia_semana',
         'nombre_dia',
         'abierto',

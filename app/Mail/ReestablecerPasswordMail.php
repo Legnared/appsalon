@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Services\TenantContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -12,15 +13,20 @@ class ReestablecerPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $marca;
+
     public function __construct(
         public string $nombre,
         public string $token,
-    ) {}
+        ?string $marca = null,
+    ) {
+        $this->marca = $marca ?: app(TenantContext::class)->brandName();
+    }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reestablece tu contraseña',
+            subject: "Reestablece tu contraseña - {$this->marca}",
         );
     }
 

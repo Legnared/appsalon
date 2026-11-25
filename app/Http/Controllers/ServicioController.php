@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Servicio;
 use App\Services\BitacoraService;
+use App\Services\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -47,7 +48,7 @@ class ServicioController extends Controller
 
         $rutaImagen = null;
         if ($request->hasFile('imagen')) {
-            $rutaImagen = $request->file('imagen')->store('servicios', 'public');
+            $rutaImagen = $request->file('imagen')->store(app(TenantContext::class)->storagePath('servicios'), 'public');
         }
 
         $servicio = Servicio::create([
@@ -138,7 +139,7 @@ class ServicioController extends Controller
             if ($rutaImagen) {
                 Storage::disk('public')->delete($rutaImagen);
             }
-            $rutaImagen = $request->file('imagen')->store('servicios', 'public');
+            $rutaImagen = $request->file('imagen')->store(app(TenantContext::class)->storagePath('servicios'), 'public');
         }
 
         $servicio->update([

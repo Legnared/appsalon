@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Usuario;
+use App\Services\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -61,13 +63,20 @@ class ClienteController extends Controller
         ]);
     }
 
-    public function crear(Request $request): RedirectResponse
+    public function crear(Request $request, TenantContext $tenantContext): RedirectResponse
     {
+        $tenantId = $tenantContext->id();
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:60'],
             'apellido' => ['required', 'string', 'max:60'],
             'telefono' => ['nullable', 'string', 'max:25'],
-            'email' => ['required', 'email', 'max:60', 'unique:usuarios,email'],
+            'email' => [
+                'required',
+                'email',
+                'max:60',
+                Rule::unique('usuarios', 'email')->where(fn ($q) => $tenantId ? $q->where('tenant_id', $tenantId) : $q),
+            ],
             'password' => ['nullable', 'string', 'min:6'],
             'barbero_id' => ['nullable', 'integer', 'exists:usuarios,id'],
             'confirmado' => ['nullable', 'boolean'],
@@ -138,11 +147,20 @@ class ClienteController extends Controller
             return redirect('/clientes');
         }
 
+        $tenantId = app(TenantContext::class)->id();
+
         $validated = $request->validate([
             'nombre' => ['required', 'string', 'max:60'],
             'apellido' => ['required', 'string', 'max:60'],
             'telefono' => ['nullable', 'string', 'max:25'],
-            'email' => ['required', 'email', 'max:60', 'unique:usuarios,email,' . $cliente->id],
+            'email' => [
+                'required',
+                'email',
+                'max:60',
+                Rule::unique('usuarios', 'email')
+                    ->where(fn ($q) => $tenantId ? $q->where('tenant_id', $tenantId) : $q)
+                    ->ignore($cliente->id),
+            ],
             'password' => ['nullable', 'string', 'min:6'],
             'barbero_id' => ['nullable', 'integer', 'exists:usuarios,id'],
             'confirmado' => ['nullable', 'boolean'],

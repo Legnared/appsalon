@@ -4,7 +4,10 @@ import { createRoot } from 'react-dom/client';
 import MainLayout from './Layouts/MainLayout';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - Danny's BarberShop` : "Danny's BarberShop"),
+    title: (title) => {
+        const defaultBrand = document.querySelector('title')?.textContent?.trim() || "Danny's BarberShop";
+        return title ? `${title} - ${defaultBrand}` : defaultBrand;
+    },
     resolve: (name) => {
         const pages = import.meta.glob('./Pages/**/*.jsx', { eager: true });
         const page = pages[`./Pages/${name}.jsx`];

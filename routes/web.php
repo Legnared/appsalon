@@ -8,9 +8,11 @@ use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\HorarioController;
+use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PagoWebhookController;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\SuperAdminTenantController;
 use Illuminate\Support\Facades\Route;
 
 // Iniciar Sesión
@@ -62,27 +64,43 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/servicios/toggle-activo', [ServicioController::class, 'toggleActivo'])->name('servicios.toggle');
     Route::post('/servicios/eliminar', [ServicioController::class, 'eliminar'])->name('servicios.eliminar');
 
-    // Gestión de Barberos (Spec 009 - Fase 1)
-    Route::get('/barberos', [BarberoController::class, 'index'])->name('barberos.index');
-    Route::get('/barberos/crear', [BarberoController::class, 'showCrear'])->name('barberos.crear');
-    Route::post('/barberos/crear', [BarberoController::class, 'crear'])->name('barberos.store');
-    Route::get('/barberos/actualizar', [BarberoController::class, 'showActualizar'])->name('barberos.actualizar');
-    Route::post('/barberos/actualizar', [BarberoController::class, 'actualizar'])->name('barberos.update');
-    Route::post('/barberos/toggle-activo', [BarberoController::class, 'toggleActivo'])->name('barberos.toggle');
+    // Gestión de Barberos (Spec 009 - Fase 1 · Modular: multi_barbero)
+    Route::middleware('feature:multi_barbero')->group(function () {
+        Route::get('/barberos', [BarberoController::class, 'index'])->name('barberos.index');
+        Route::get('/barberos/crear', [BarberoController::class, 'showCrear'])->name('barberos.crear');
+        Route::post('/barberos/crear', [BarberoController::class, 'crear'])->name('barberos.store');
+        Route::get('/barberos/actualizar', [BarberoController::class, 'showActualizar'])->name('barberos.actualizar');
+        Route::post('/barberos/actualizar', [BarberoController::class, 'actualizar'])->name('barberos.update');
+        Route::post('/barberos/toggle-activo', [BarberoController::class, 'toggleActivo'])->name('barberos.toggle');
+    });
 
-    // Cartera de Clientes y Prospectos (Spec 009 - Fase 2)
-    Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
-    Route::get('/clientes/crear', [ClienteController::class, 'showCrear'])->name('clientes.crear');
-    Route::post('/clientes/crear', [ClienteController::class, 'crear'])->name('clientes.store');
-    Route::get('/clientes/actualizar', [ClienteController::class, 'showActualizar'])->name('clientes.actualizar');
-    Route::post('/clientes/actualizar', [ClienteController::class, 'actualizar'])->name('clientes.update');
+    // Cartera de Clientes y Prospectos (Spec 009 - Fase 2 · Modular: crm_clientes)
+    Route::middleware('feature:crm_clientes')->group(function () {
+        Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+        Route::get('/clientes/crear', [ClienteController::class, 'showCrear'])->name('clientes.crear');
+        Route::post('/clientes/crear', [ClienteController::class, 'crear'])->name('clientes.store');
+        Route::get('/clientes/actualizar', [ClienteController::class, 'showActualizar'])->name('clientes.actualizar');
+        Route::post('/clientes/actualizar', [ClienteController::class, 'actualizar'])->name('clientes.update');
+    });
 
     // Configuración de Horarios Laborales (Spec 012)
     Route::get('/horarios', [HorarioController::class, 'index'])->name('horarios.index');
     Route::post('/horarios', [HorarioController::class, 'actualizar'])->name('horarios.update');
+
+    // Personalización de Marca, Logo y Portada de la Barbería (Spec 017+)
+    Route::get('/mi-marca', [MarcaController::class, 'index'])->name('marca.index');
+    Route::post('/mi-marca', [MarcaController::class, 'actualizar'])->name('marca.update');
 });
 
-// Bitácora de Auditoría — Solo Lectura Exclusivo Admin Técnico (NO dueño/barbero) (Spec 014)
+// Exclusivo Admin Técnico / Super-Admin SaaS (NO dueño/barbero) (Spec 014 + Spec 017)
 Route::middleware(['auth', 'bitacora_admin'])->group(function () {
     Route::get('/bitacora', [BitacoraController::class, 'index'])->name('bitacora.index');
+
+    Route::get('/super-admin', [SuperAdminTenantController::class, 'index'])->name('superadmin.index');
+    Route::get('/super-admin/barberias/crear', [SuperAdminTenantController::class, 'showCrear'])->name('superadmin.tenants.crear');
+    Route::post('/super-admin/barberias', [SuperAdminTenantController::class, 'crear'])->name('superadmin.tenants.store');
+    Route::get('/super-admin/barberias/{tenant}/editar', [SuperAdminTenantController::class, 'showEditar'])->name('superadmin.tenants.editar');
+    Route::put('/super-admin/barberias/{tenant}', [SuperAdminTenantController::class, 'actualizar'])->name('superadmin.tenants.update');
+    Route::post('/super-admin/barberias/{tenant}/toggle', [SuperAdminTenantController::class, 'toggleActivo'])->name('superadmin.tenants.toggle');
+    Route::get('/super-admin/barberias/{tenant}/previsualizar', [SuperAdminTenantController::class, 'previsualizar'])->name('superadmin.tenants.previsualizar');
 });

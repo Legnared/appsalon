@@ -1,10 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
 import { confirmarCerrarSesion } from '@/Components/AppSidebar';
 import BitacoraController from '@/actions/App/Http/Controllers/BitacoraController';
+import SuperAdminTenantController from '@/actions/App/Http/Controllers/SuperAdminTenantController';
 
 export default function MobileTopBar() {
-    const { auth } = usePage().props;
+    const { auth, tenant } = usePage().props;
     const usuario = auth?.user;
+    const marca = tenant?.nombre || "Danny's BarberShop";
 
     if (!usuario) return null;
 
@@ -25,12 +27,26 @@ export default function MobileTopBar() {
                     )}
                 </div>
                 <div className="mobile-user-info">
-                    <span className="mobile-brand">Danny&apos;s BarberShop · {rolLabel}</span>
+                    <span className="mobile-brand">{marca} · {rolLabel}</span>
                     <strong className="mobile-greeting">Hola, {usuario.nombre}</strong>
                 </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                {puedeVerBitacora && (
+                    <Link
+                        href={SuperAdminTenantController.index.url()}
+                        className="mobile-logout-btn"
+                        title="Super-Admin SaaS"
+                        aria-label="Super-Admin SaaS"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                    </Link>
+                )}
+
                 {puedeVerBitacora && (
                     <Link
                         href={BitacoraController.index.url()}
