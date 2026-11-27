@@ -341,9 +341,11 @@
 .brand-logo-badge {
     width: 4.6rem;
     height: 4.6rem;
+    min-width: 4.6rem;
     border-radius: 1.1rem;
     object-fit: cover;
     flex-shrink: 0;
+    filter: none;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(212, 162, 89, 0.45);
     padding: 0.25rem;
@@ -352,12 +354,14 @@
     &.sm {
         width: 3.8rem;
         height: 3.8rem;
+        min-width: 3.8rem;
         border-radius: 0.9rem;
     }
 
     &.lg {
         width: 5.6rem;
         height: 5.6rem;
+        min-width: 5.6rem;
         border-radius: 1.3rem;
     }
 }

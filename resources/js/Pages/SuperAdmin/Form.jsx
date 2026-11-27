@@ -1,4 +1,5 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 import Alertas from '@/Components/Alertas';
 import SuperAdminTenantController from '@/actions/App/Http/Controllers/SuperAdminTenantController';
 
@@ -41,6 +42,14 @@ export default function SuperAdminForm({
         mercadopago_point_device_id: tenant?.mercadopago_point_device_id ?? '',
         mercadopago_webhook_url: tenant?.mercadopago_webhook_url ?? '',
         features: { ...featuresActivos },
+        email_template: {
+            encabezado: tenant?.email_template?.encabezado ?? 'EST. BARBER SHOP · COMUNICADO OFICIAL',
+            asunto: tenant?.email_template?.asunto ?? 'Bienvenido a {barberia} · Agenda tu cita en línea',
+            saludo: tenant?.email_template?.saludo ?? '¡Hola! Qué gusto saludarte desde {barberia}',
+            cuerpo: tenant?.email_template?.cuerpo ?? 'Ya puedes agendar tu próximo corte o servicio de barba en segundos, elegir a tu barbero favorito y confirmar tu horario sin llamadas ni esperas.',
+            boton_texto: tenant?.email_template?.boton_texto ?? 'Agendar mi Cita Ahora',
+            pie: tenant?.email_template?.pie ?? 'Plataforma impulsada por Angel DevSign · Innovación en Código y Diseño.',
+        },
         // Campos exclusivos de alta rápida
         dueno_nombre: '',
         dueno_apellido: '',
@@ -55,6 +64,42 @@ export default function SuperAdminForm({
             ...data.features,
             [key]: !data.features[key],
         });
+    };
+
+    const updateEmailField = (field, value) => {
+        setData('email_template', {
+            ...data.email_template,
+            [field]: value,
+        });
+    };
+
+    const probarPlantilla = async () => {
+        if (!esEdicion) return;
+        const { value: email } = await Swal.fire({
+            title: `Probar Plantilla de ${data.nombre || tenant.nombre}`,
+            text: 'Se enviará esta plantilla HTML tal como la estás editando.',
+            input: 'email',
+            inputPlaceholder: 'tu-correo@ejemplo.com',
+            showCancelButton: true,
+            confirmButtonText: 'Enviar prueba HTML',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: data.color_primario || '#d4a259',
+            cancelButtonColor: '#28221c',
+            background: '#1f1b17',
+            color: '#f5efe6',
+        });
+
+        if (email) {
+            router.post(
+                SuperAdminTenantController.enviarCorreoPrueba.url(),
+                {
+                    email,
+                    tenant_id: tenant.id,
+                    email_template: data.email_template,
+                },
+                { preserveScroll: true }
+            );
+        }
     };
 
     const handleSubmit = (e) => {
@@ -413,6 +458,137 @@ export default function SuperAdminForm({
                         })}
                     </div>
                 </section>
+
+                {esEdicion && (
+                    <section className="superadmin-section">
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.2rem' }}>
+                            <div>
+                                <h3 style={{ margin: 0 }}>4. Plantilla de Correo HTML (Personalizable)</h3>
+                                <p className="superadmin-hint" style={{ margin: '0.4rem 0 0' }}>
+                                    Usa <code>{'{barberia}'}</code> para insertar automáticamente el nombre de la barbería. El diseño hereda el color de acento.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                className="boton boton-secundario"
+                                style={{ margin: 0, padding: '0.8rem 1.4rem', fontSize: '1.3rem' }}
+                                onClick={probarPlantilla}
+                            >
+                                Enviar Prueba HTML
+                            </button>
+                        </div>
+
+                        <div className="superadmin-grid-2">
+                            <div className="campo">
+                                <label htmlFor="tpl_encabezado">Etiqueta Superior</label>
+                                <input
+                                    id="tpl_encabezado"
+                                    type="text"
+                                    value={data.email_template.encabezado}
+                                    onChange={(e) => updateEmailField('encabezado', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="campo">
+                                <label htmlFor="tpl_asunto">Asunto del Correo</label>
+                                <input
+                                    id="tpl_asunto"
+                                    type="text"
+                                    value={data.email_template.asunto}
+                                    onChange={(e) => updateEmailField('asunto', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="campo">
+                                <label htmlFor="tpl_saludo">Título / Saludo</label>
+                                <input
+                                    id="tpl_saludo"
+                                    type="text"
+                                    value={data.email_template.saludo}
+                                    onChange={(e) => updateEmailField('saludo', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="campo">
+                                <label htmlFor="tpl_boton">Texto del Botón CTA</label>
+                                <input
+                                    id="tpl_boton"
+                                    type="text"
+                                    value={data.email_template.boton_texto}
+                                    onChange={(e) => updateEmailField('boton_texto', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="campo" style={{ gridColumn: '1 / -1' }}>
+                                <label htmlFor="tpl_cuerpo">Mensaje Principal</label>
+                                <textarea
+                                    id="tpl_cuerpo"
+                                    rows={4}
+                                    value={data.email_template.cuerpo}
+                                    onChange={(e) => updateEmailField('cuerpo', e.target.value)}
+                                    style={{ width: '100%', padding: '1rem 1.2rem', borderRadius: '0.9rem', fontSize: '1.4rem' }}
+                                />
+                            </div>
+
+                            <div className="campo" style={{ gridColumn: '1 / -1' }}>
+                                <label htmlFor="tpl_pie">Pie de Correo (Firma)</label>
+                                <input
+                                    id="tpl_pie"
+                                    type="text"
+                                    value={data.email_template.pie}
+                                    onChange={(e) => updateEmailField('pie', e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div
+                            style={{
+                                marginTop: '2rem',
+                                padding: '2rem',
+                                borderRadius: '1.4rem',
+                                background: '#0f1115',
+                                border: `1px solid ${data.color_primario || '#d4a259'}55`,
+                                borderTop: `4px solid ${data.color_primario || '#d4a259'}`,
+                            }}
+                        >
+                            <div style={{ textAlign: 'center', paddingBottom: '1.4rem', borderBottom: `1px solid ${data.color_primario || '#d4a259'}33` }}>
+                                <div style={{ fontSize: '1.05rem', letterSpacing: '0.2rem', textTransform: 'uppercase', color: data.color_primario || '#d4a259', fontWeight: 700 }}>
+                                    {(data.email_template.encabezado || '').replaceAll('{barberia}', data.nombre || tenant.nombre)}
+                                </div>
+                                <div style={{ fontSize: '2.4rem', fontWeight: 700, color: '#ffffff', marginTop: '0.4rem', fontFamily: 'Georgia, serif' }}>
+                                    {data.nombre || tenant.nombre}
+                                </div>
+                                <div style={{ fontSize: '1.25rem', color: '#b8bec9' }}>{data.tagline}</div>
+                            </div>
+                            <div style={{ padding: '1.8rem 0.6rem' }}>
+                                <strong style={{ display: 'block', fontSize: '1.8rem', color: '#ffffff', marginBottom: '0.8rem' }}>
+                                    {(data.email_template.saludo || '').replaceAll('{barberia}', data.nombre || tenant.nombre)}
+                                </strong>
+                                <p style={{ fontSize: '1.4rem', color: '#dfe3ea', lineHeight: 1.6, margin: '0 0 1.8rem', whiteSpace: 'pre-line' }}>
+                                    {(data.email_template.cuerpo || '').replaceAll('{barberia}', data.nombre || tenant.nombre)}
+                                </p>
+                                <div style={{ textAlign: 'center' }}>
+                                    <span
+                                        style={{
+                                            display: 'inline-block',
+                                            padding: '1rem 2.4rem',
+                                            borderRadius: '1rem',
+                                            backgroundColor: data.color_primario || '#d4a259',
+                                            color: '#111317',
+                                            fontWeight: 700,
+                                            fontSize: '1.4rem',
+                                        }}
+                                    >
+                                        {data.email_template.boton_texto || 'Agendar mi Cita Ahora'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style={{ textAlign: 'center', paddingTop: '1.2rem', borderTop: '1px solid #262b35', fontSize: '1.15rem', color: '#9aa2b0' }}>
+                                {(data.email_template.pie || '').replaceAll('{barberia}', data.nombre || tenant.nombre)}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 <div className="superadmin-submit-row">
                     <button type="submit" className="boton" disabled={processing}>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CorreoPersonalizadoMail;
 use App\Models\Cita;
 use App\Models\HorarioLaboral;
 use App\Models\Servicio;
@@ -9,6 +10,7 @@ use App\Models\Tenant;
 use App\Models\Usuario;
 use App\Services\BitacoraService;
 use App\Services\FeatureManager;
+use App\Services\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -261,6 +263,12 @@ class SuperAdminTenantController extends Controller
                 'mercadopago_point_device_id' => $tenant->mercadopago_point_device_id ?? '',
                 'mercadopago_webhook_url' => $tenant->mercadopago_webhook_url ?? '',
                 'tiene_mp_token' => ! empty($tenant->mercadopago_access_token),
+                'email_template' => array_merge(
+                    CorreoPersonalizadoMail::defaults($tenant->nombre),
+                    is_array($tenant->configuracion_extra['email_template'] ?? null)
+                        ? $tenant->configuracion_extra['email_template']
+                        : []
+                ),
             ],
             'featuresCatalog' => $this->features->catalog(),
             'featuresActivos' => $this->features->allForTenant($tenant),
@@ -290,10 +298,29 @@ class SuperAdminTenantController extends Controller
             'mercadopago_point_device_id' => ['nullable', 'string', 'max:120'],
             'mercadopago_webhook_url' => ['nullable', 'string', 'max:255'],
             'features' => ['nullable', 'array'],
+            'email_template' => ['nullable', 'array'],
+            'email_template.encabezado' => ['nullable', 'string', 'max:120'],
+            'email_template.asunto' => ['nullable', 'string', 'max:160'],
+            'email_template.saludo' => ['nullable', 'string', 'max:160'],
+            'email_template.cuerpo' => ['nullable', 'string', 'max:2000'],
+            'email_template.boton_texto' => ['nullable', 'string', 'max:80'],
+            'email_template.pie' => ['nullable', 'string', 'max:200'],
         ]);
 
         $extra = is_array($tenant->configuracion_extra) ? $tenant->configuracion_extra : [];
         $extra['features'] = $this->sanitizeFeatures($validated['features'] ?? [], $validated['plan']);
+
+        if (is_array($validated['email_template'] ?? null)) {
+            $defaultsTpl = CorreoPersonalizadoMail::defaults(trim($validated['nombre']));
+            $extra['email_template'] = [
+                'encabezado' => trim((string) ($validated['email_template']['encabezado'] ?? $defaultsTpl['encabezado'])),
+                'asunto' => trim((string) ($validated['email_template']['asunto'] ?? $defaultsTpl['asunto'])),
+                'saludo' => trim((string) ($validated['email_template']['saludo'] ?? $defaultsTpl['saludo'])),
+                'cuerpo' => trim((string) ($validated['email_template']['cuerpo'] ?? $defaultsTpl['cuerpo'])),
+                'boton_texto' => trim((string) ($validated['email_template']['boton_texto'] ?? $defaultsTpl['boton_texto'])),
+                'pie' => trim((string) ($validated['email_template']['pie'] ?? $defaultsTpl['pie'])),
+            ];
+        }
 
         $datos = [
             'nombre' => trim($validated['nombre']),
@@ -338,10 +365,12 @@ class SuperAdminTenantController extends Controller
         return redirect('/super-admin')->with('exito', "Barbería '{$tenant->nombre}' actualizada correctamente.");
     }
 
-    public function enviarCorreoPrueba(Request $request): RedirectResponse
+    public function enviarCorreoPrueba(Request $request, TenantContext $tenantContext): RedirectResponse
     {
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:120'],
+            'tenant_id' => ['nullable', 'integer', 'exists:tenants,id'],
+            'email_template' => ['nullable', 'array'],
         ], [
             'email.required' => 'Indica un correo de destino para la prueba.',
             'email.email' => 'El correo de destino no es válido.',
@@ -349,23 +378,25 @@ class SuperAdminTenantController extends Controller
 
         try {
             $mailer = (string) config('mail.default', 'log');
-            Mail::raw(
-                "¡Prueba exitosa! Tu plataforma SaaS de Barberías envió este correo correctamente usando el driver '{$mailer}'.",
-                function ($message) use ($validated) {
-                    $message->to($validated['email'])
-                        ->subject('Prueba de Correo SaaS · BarberShop');
-                }
-            );
+            $tenant = ! empty($validated['tenant_id'])
+                ? Tenant::find((int) $validated['tenant_id'])
+                : ($tenantContext->current() ?? Tenant::orderBy('id')->first());
+
+            $override = is_array($validated['email_template'] ?? null)
+                ? $validated['email_template']
+                : null;
+
+            Mail::to($validated['email'])->send(new CorreoPersonalizadoMail($tenant, $override));
 
             BitacoraService::registrar(
                 modulo: 'tenants',
                 accion: 'correo_prueba_enviado',
-                descripcion: "Correo de prueba enviado a {$validated['email']} vía {$mailer}.",
-                detalles: ['email' => $validated['email'], 'mailer' => $mailer],
+                descripcion: "Correo con plantilla HTML enviado a {$validated['email']} vía {$mailer} (" . ($tenant?->nombre ?? 'SaaS') . ").",
+                detalles: ['email' => $validated['email'], 'mailer' => $mailer, 'tenant_id' => $tenant?->id],
                 nivel: 'exito'
             );
 
-            return back()->with('exito', "Correo de prueba enviado a {$validated['email']} (driver: {$mailer}).");
+            return back()->with('exito', "Correo HTML enviado a {$validated['email']} con la plantilla de " . ($tenant?->nombre ?? 'tu SaaS') . '.');
         } catch (Throwable $e) {
             BitacoraService::registrar(
                 modulo: 'tenants',
