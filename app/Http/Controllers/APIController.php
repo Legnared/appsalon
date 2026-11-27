@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BarberoAusencia;
 use App\Models\Cita;
 use App\Models\CitaServicio;
 use App\Models\HorarioLaboral;
@@ -51,6 +52,24 @@ class APIController extends Controller
                 'intervalo_minutos' => $configDia['intervalo_minutos'],
                 'slots' => [],
             ]);
+        }
+
+        // Spec 022: Verificar si el barbero seleccionado tiene ausencia / vacaciones en esta fecha
+        if (is_numeric($barberoId)) {
+            $ausencia = BarberoAusencia::barberoAusenteEnFecha((int) $barberoId, $fecha);
+            if ($ausencia) {
+                return response()->json([
+                    'fecha' => $fecha,
+                    'abierto' => true,
+                    'barbero_ausente' => true,
+                    'barbero_id' => (int) $barberoId,
+                    'barbero_nombre' => $ausencia->barbero?->nombre_completo ?? 'El barbero seleccionado',
+                    'motivo_ausencia' => $ausencia->motivo ?: 'Día libre / No disponible',
+                    'ausencia_fecha_inicio' => $ausencia->fecha_inicio?->toDateString(),
+                    'ausencia_fecha_fin' => $ausencia->fecha_fin?->toDateString(),
+                    'slots' => [],
+                ]);
+            }
         }
 
         $aperturaMin = $this->horaAMinutos($configDia['hora_apertura']) ?? 600;
@@ -143,6 +162,20 @@ class APIController extends Controller
                 'resultado' => false,
                 'mensaje' => "Los días {$configDia['nombre_dia']} no laboramos. Por favor elige otro día.",
             ], 422);
+        }
+
+        // Spec 022: Bloquear reservación si el barbero tiene ausencia/vacaciones en esa fecha
+        if ($barberoId !== null) {
+            $ausencia = BarberoAusencia::barberoAusenteEnFecha($barberoId, $validated['fecha']);
+            if ($ausencia) {
+                $nombreBarbero = $ausencia->barbero?->nombre_completo ?? 'El barbero seleccionado';
+                $motivoTexto = $ausencia->motivo ? " ({$ausencia->motivo})" : '';
+
+                return response()->json([
+                    'resultado' => false,
+                    'mensaje' => "{$nombreBarbero} no labora en esa fecha{$motivoTexto}. Por favor elige otro barbero disponible o selecciona otra fecha.",
+                ], 422);
+            }
         }
 
         $intervaloDia = max(15, (int) ($configDia['intervalo_minutos'] ?? self::MINUTOS_EMPALME));
