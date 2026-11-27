@@ -25,9 +25,23 @@ function formatearFechaMX(fechaStr) {
     });
 }
 
+function formatearFechaCortaMX(fechaStr) {
+    if (!fechaStr) return '';
+    const [year, month, day] = fechaStr.split('-').map(Number);
+    if (!year || !month || !day) return fechaStr;
+    const fechaUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    return fechaUTC.toLocaleDateString('es-MX', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'UTC',
+    });
+}
+
 export default function CitaIndex({
     serviciosIniciales = [],
     barberosActivos = [],
+    ausenciasProximas = [],
     barberoPreferidoId = null,
     diasCerrados = [0],
     pagoConfig = {},
@@ -54,6 +68,7 @@ export default function CitaIndex({
     const [fecha, setFecha] = useState('');
     const [hora, setHora] = useState('');
     const [slotsHorario, setSlotsHorario] = useState([]);
+    const [ausenciaSeleccionada, setAusenciaSeleccionada] = useState(null);
     const [cargandoHorarios, setCargandoHorarios] = useState(false);
     const [alertaFormulario, setAlertaFormulario] = useState(null);
     const [guardando, setGuardando] = useState(false);
@@ -81,15 +96,17 @@ export default function CitaIndex({
         };
     }, [serviciosIniciales]);
 
-    // Consultar disponibilidad real (margen 60 min) cuando cambia fecha o barbero
+    // Consultar disponibilidad real (margen 60 min + ausencias por barbero) cuando cambia fecha o barbero
     useEffect(() => {
         if (!fecha) {
             setSlotsHorario([]);
+            setAusenciaSeleccionada(null);
             return;
         }
 
         let cancelado = false;
         setCargandoHorarios(true);
+        setAusenciaSeleccionada(null);
 
         const query = { fecha };
         if (barberoId) query.barbero_id = barberoId;
@@ -98,6 +115,18 @@ export default function CitaIndex({
             .get(APIController.disponibilidad.url({ query }))
             .then((res) => {
                 if (cancelado) return;
+                if (res.data?.barbero_ausente) {
+                    setAusenciaSeleccionada({
+                        barbero_id: res.data.barbero_id,
+                        barbero_nombre: res.data.barbero_nombre || 'El barbero seleccionado',
+                        motivo: res.data.motivo_ausencia || 'No disponible',
+                        fecha_inicio: res.data.ausencia_fecha_inicio,
+                        fecha_fin: res.data.ausencia_fecha_fin,
+                    });
+                    setSlotsHorario([]);
+                    setHora('');
+                    return;
+                }
                 const nuevosSlots = res.data?.slots ?? [];
                 setSlotsHorario(nuevosSlots);
                 if (hora && !nuevosSlots.some((s) => s.hora === hora && s.disponible)) {
@@ -105,7 +134,10 @@ export default function CitaIndex({
                 }
             })
             .catch(() => {
-                if (!cancelado) setSlotsHorario([]);
+                if (!cancelado) {
+                    setSlotsHorario([]);
+                    setAusenciaSeleccionada(null);
+                }
             })
             .finally(() => {
                 if (!cancelado) setCargandoHorarios(false);
@@ -115,6 +147,25 @@ export default function CitaIndex({
             cancelado = true;
         };
     }, [fecha, barberoId]);
+
+    const obtenerAusenciaEnFecha = (idBarbero, fechaObjetivo) => {
+        if (!idBarbero || !fechaObjetivo) return null;
+        return (
+            ausenciasProximas.find(
+                (a) =>
+                    Number(a.barbero_id) === Number(idBarbero) &&
+                    a.fecha_inicio <= fechaObjetivo &&
+                    a.fecha_fin >= fechaObjetivo
+            ) || null
+        );
+    };
+
+    const barberosAlternativosEnFecha = useMemo(() => {
+        if (!fecha) return [];
+        return barberosActivos.filter(
+            (b) => b.id !== barberoId && !obtenerAusenciaEnFecha(b.id, fecha)
+        );
+    }, [barberosActivos, barberoId, fecha, ausenciasProximas]);
 
     const mostrarAlertaTemporal = (mensaje, tipo = 'error') => {
         if (timerRef.current) clearTimeout(timerRef.current);
@@ -351,6 +402,57 @@ export default function CitaIndex({
 
             <Barra />
 
+            {ausenciasProximas.length > 0 && (
+                <div
+                    role="status"
+                    style={{
+                        margin: '0 0 2rem',
+                        padding: '1.4rem 1.8rem',
+                        borderRadius: '1.1rem',
+                        border: '1px solid rgba(212, 162, 89, 0.45)',
+                        background: 'rgba(212, 162, 89, 0.1)',
+                    }}
+                >
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem',
+                            marginBottom: '0.8rem',
+                            fontWeight: 700,
+                            fontSize: '1.45rem',
+                            color: '#f0c674',
+                        }}
+                    >
+                        <span>Aviso de Disponibilidad de Barberos</span>
+                    </div>
+                    <ul
+                        style={{
+                            margin: 0,
+                            paddingLeft: '1.8rem',
+                            display: 'grid',
+                            gap: '0.45rem',
+                            fontSize: '1.35rem',
+                            color: '#f5efe6',
+                            lineHeight: 1.45,
+                        }}
+                    >
+                        {ausenciasProximas.map((a) => {
+                            const mismoDia = a.fecha_inicio === a.fecha_fin;
+                            const rangoTexto = mismoDia
+                                ? `el ${formatearFechaCortaMX(a.fecha_inicio)}`
+                                : `del ${formatearFechaCortaMX(a.fecha_inicio)} al ${formatearFechaCortaMX(a.fecha_fin)}`;
+                            return (
+                                <li key={a.id}>
+                                    <strong>{a.barbero_nombre}</strong> no laborará {rangoTexto}
+                                    {a.motivo ? ` (${a.motivo})` : ''}.
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            )}
+
             {misReservaciones.length > 0 && (
                 <div className="mobile-mis-citas-box">
                     <button
@@ -545,11 +647,13 @@ export default function CitaIndex({
                                 <div className="selector-barberos-grid">
                                     {barberosActivos.map((barbero) => {
                                         const activo = barberoId === barbero.id;
+                                        const ausenciaDia = obtenerAusenciaEnFecha(barbero.id, fecha);
                                         return (
                                             <button
                                                 key={barbero.id}
                                                 type="button"
                                                 className={`barbero-option-card ${activo ? 'activo' : ''}`}
+                                                style={ausenciaDia ? { opacity: 0.62 } : undefined}
                                                 onClick={() => setBarberoId(barbero.id)}
                                             >
                                                 <div className="barbero-avatar">
@@ -569,6 +673,22 @@ export default function CitaIndex({
                                                     <span>
                                                         {barbero.especialidad || 'Barbero profesional'}
                                                     </span>
+                                                    {ausenciaDia && (
+                                                        <span
+                                                            style={{
+                                                                display: 'inline-block',
+                                                                marginTop: '0.35rem',
+                                                                padding: '0.15rem 0.6rem',
+                                                                borderRadius: '999px',
+                                                                fontSize: '1.1rem',
+                                                                fontWeight: 700,
+                                                                background: 'rgba(203, 56, 55, 0.22)',
+                                                                color: '#ffb4b4',
+                                                            }}
+                                                        >
+                                                            No disponible este día
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </button>
                                         );
@@ -603,6 +723,50 @@ export default function CitaIndex({
                                 </p>
                             ) : cargandoHorarios ? (
                                 <p className="horarios-ayuda">Consultando disponibilidad...</p>
+                            ) : ausenciaSeleccionada ? (
+                                <div
+                                    style={{
+                                        padding: '1.6rem',
+                                        borderRadius: '1rem',
+                                        border: '1px solid rgba(212, 162, 89, 0.45)',
+                                        background: 'rgba(212, 162, 89, 0.08)',
+                                        color: '#f5efe6',
+                                        fontSize: '1.4rem',
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    <p style={{ margin: '0 0 0.6rem', fontWeight: 700, color: '#f0c674' }}>
+                                        {ausenciaSeleccionada.barbero_nombre} no labora el{' '}
+                                        {formatearFechaMX(fecha)}
+                                    </p>
+                                    <p style={{ margin: '0 0 1.2rem', color: '#e0d6c8', fontSize: '1.32rem' }}>
+                                        Motivo: {ausenciaSeleccionada.motivo}. Puedes elegir otra fecha
+                                        o agendar este mismo día con otro barbero disponible:
+                                    </p>
+                                    {barberosAlternativosEnFecha.length > 0 ? (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem' }}>
+                                            {barberosAlternativosEnFecha.map((alt) => (
+                                                <button
+                                                    key={alt.id}
+                                                    type="button"
+                                                    className="boton"
+                                                    style={{
+                                                        margin: 0,
+                                                        padding: '0.8rem 1.4rem',
+                                                        fontSize: '1.32rem',
+                                                    }}
+                                                    onClick={() => setBarberoId(alt.id)}
+                                                >
+                                                    Agendar con {alt.nombre_completo}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p style={{ margin: 0, fontSize: '1.3rem', color: '#b9afa1' }}>
+                                            Por favor selecciona otra fecha disponible en el calendario.
+                                        </p>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="horarios-grid">
                                     {slotsHorario.map((slot) => (

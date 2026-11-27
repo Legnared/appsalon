@@ -88,9 +88,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::post('/clientes/actualizar', [ClienteController::class, 'actualizar'])->name('clientes.update');
     });
 
-    // Configuración de Horarios Laborales (Spec 012)
+    // Configuración de Horarios Laborales y Ausencias de Barberos (Spec 012 + Spec 022)
     Route::get('/horarios', [HorarioController::class, 'index'])->name('horarios.index');
     Route::post('/horarios', [HorarioController::class, 'actualizar'])->name('horarios.update');
+    Route::post('/horarios/ausencias', [HorarioController::class, 'crearAusencia'])->name('horarios.ausencias.store');
+    Route::delete('/horarios/ausencias/{ausencia}', [HorarioController::class, 'eliminarAusencia'])->name('horarios.ausencias.destroy');
 
     // Personalización de Marca, Logo y Portada de la Barbería (Spec 017+)
     Route::get('/mi-marca', [MarcaController::class, 'index'])->name('marca.index');
