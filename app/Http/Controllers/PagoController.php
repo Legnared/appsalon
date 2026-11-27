@@ -5,13 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\Pago;
 use App\Services\BitacoraService;
 use App\Services\Payments\PaymentManager;
+use App\Services\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PagoController extends Controller
 {
-    public function cobrarEnTerminal(Request $request, Pago $pago, PaymentManager $payments): JsonResponse
+    public function cobrarEnTerminal(Request $request, Pago $pago, PaymentManager $payments, TenantContext $tenantContext): JsonResponse
     {
+        $user = $request->user();
+        $tenantId = $tenantContext->id();
+
+        if ($tenantId !== null && $pago->tenant_id !== null && (int) $pago->tenant_id !== (int) $tenantId) {
+            abort(403, 'Este pago pertenece a otra barbería.');
+        }
+
+        if ($user && ! $user->esAdmin()) {
+            $cita = $pago->cita;
+            if (! $cita || (int) $cita->barberoId !== (int) $user->id) {
+                abort(403, 'Solo puedes liquidar citas asignadas a tu agenda.');
+            }
+        }
+
         $estadoAnterior = $pago->estado;
         $montoTotal = (float) ($pago->monto_total > 0 ? $pago->monto_total : $pago->monto);
         $saldoActual = (float) ($pago->saldo_pendiente > 0 ? $pago->saldo_pendiente : ($pago->estado === 'pagado' ? 0 : $montoTotal));

@@ -17,21 +17,21 @@ use App\Http\Controllers\SuperAdminCuentaController;
 use App\Http\Controllers\SuperAdminTenantController;
 use Illuminate\Support\Facades\Route;
 
-// Iniciar Sesión
+// Iniciar Sesión (con rate limiting anti fuerza bruta)
 Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/', [AuthController::class, 'login'])->name('login.attempt');
+Route::post('/', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.attempt');
 Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Recuperar Password
+// Recuperar Password (con rate limiting para proteger cuota Resend)
 Route::get('/olvide', [AuthController::class, 'showOlvide'])->name('password.request');
-Route::post('/olvide', [AuthController::class, 'olvide'])->name('password.email');
+Route::post('/olvide', [AuthController::class, 'olvide'])->middleware('throttle:5,1')->name('password.email');
 
 Route::get('/reestablecer', [AuthController::class, 'showRecuperar'])->name('password.reset');
-Route::post('/reestablecer', [AuthController::class, 'recuperar'])->name('password.update');
+Route::post('/reestablecer', [AuthController::class, 'recuperar'])->middleware('throttle:5,1')->name('password.update');
 
 // Crear Cuenta y Confirmación
 Route::get('/crear-cuenta', [AuthController::class, 'showCrear'])->name('register');
-Route::post('/crear-cuenta', [AuthController::class, 'crear'])->name('register.store');
+Route::post('/crear-cuenta', [AuthController::class, 'crear'])->middleware('throttle:5,1')->name('register.store');
 Route::get('/mensaje', [AuthController::class, 'mensaje'])->name('register.message');
 Route::get('/confirmar-cuenta', [AuthController::class, 'confirmar'])->name('register.confirm');
 
@@ -45,14 +45,14 @@ Route::middleware('auth')->group(function () {
     // API de Citas y Servicios
     Route::get('/api/servicios', [APIController::class, 'index'])->name('api.servicios.index');
     Route::get('/api/disponibilidad', [APIController::class, 'disponibilidad'])->name('api.disponibilidad');
-    Route::post('/api/citas', [APIController::class, 'guardar'])->name('api.citas.guardar');
+    Route::post('/api/citas', [APIController::class, 'guardar'])->middleware('throttle:20,1')->name('api.citas.guardar');
     Route::post('/api/citas/{cita}/reagendar', [APIController::class, 'reagendar'])->middleware('admin')->name('api.citas.reagendar');
     Route::post('/api/eliminar', [APIController::class, 'eliminar'])->middleware('admin')->name('api.citas.eliminar');
     Route::post('/api/pagos/{pago}/terminal', [PagoController::class, 'cobrarEnTerminal'])->middleware('staff')->name('api.pagos.terminal');
 });
 
-// Webhook Bancario / Terminal POS (multi-gateway)
-Route::post('/api/webhooks/pagos/{gateway}', [PagoWebhookController::class, 'handle'])->name('api.pagos.webhook');
+// Webhook Bancario / Terminal POS (multi-gateway + rate limiting)
+Route::post('/api/webhooks/pagos/{gateway}', [PagoWebhookController::class, 'handle'])->middleware('throttle:60,1')->name('api.pagos.webhook');
 
 // Agenda compartida (Admin ve todos / Barbero ve solo sus citas)
 Route::middleware(['auth', 'staff'])->group(function () {

@@ -11,6 +11,26 @@ class PagoWebhookController extends Controller
 {
     public function handle(Request $request, string $gateway): JsonResponse
     {
+        // Validación de secreto de webhook cuando está configurado en entorno
+        $webhookSecret = trim((string) config('payments.drivers.bank_api.webhook_secret', ''));
+        if ($webhookSecret !== '') {
+            $headerSecret = (string) ($request->header('X-Webhook-Secret') ?? $request->header('x-signature') ?? '');
+            $hmacEsperado = hash_hmac('sha256', (string) $request->getContent(), $webhookSecret);
+            $firmaValida = hash_equals($webhookSecret, $headerSecret) || hash_equals($hmacEsperado, $headerSecret);
+
+            if (! $firmaValida) {
+                BitacoraService::registrar(
+                    modulo: 'pagos',
+                    accion: 'webhook_firma_invalida',
+                    descripcion: "Webhook rechazado desde {$gateway} por firma/secreto inválido.",
+                    detalles: ['gateway' => $gateway, 'ip' => $request->ip(), 'actor_rol' => 'webhook'],
+                    nivel: 'error'
+                );
+
+                return response()->json(['ok' => false, 'mensaje' => 'Firma de webhook inválida'], 401);
+            }
+        }
+
         $referencia = $request->input('transaction_id')
             ?? $request->input('referencia_bancaria')
             ?? $request->input('intent_id');
@@ -27,7 +47,7 @@ class PagoWebhookController extends Controller
             return response()->json(['ok' => false, 'mensaje' => 'Referencia no proporcionada'], 400);
         }
 
-        $pago = Pago::where('referencia_bancaria', $referencia)->first();
+        $pago = Pago::withoutGlobalScope('tenant')->where('referencia_bancaria', $referencia)->first();
 
         if (! $pago) {
             BitacoraService::registrar(

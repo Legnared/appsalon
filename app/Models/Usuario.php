@@ -141,7 +141,7 @@ class Usuario extends Authenticatable
 
     public function crearToken(): string
     {
-        $this->token = uniqid();
+        $this->token = bin2hex(random_bytes(7));
 
         return $this->token;
     }

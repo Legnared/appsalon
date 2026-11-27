@@ -3,9 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Models\Tenant;
+use App\Services\BitacoraService;
 use App\Services\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,6 +41,36 @@ class ResolveTenant
 
         $this->tenantContext->set($tenant);
         View::share('currentTenant', $tenant);
+
+        // Guardia Cross-Tenant: un usuario no Super-Admin jamás puede operar en otra barbería
+        $user = $request->user();
+        if (
+            $tenant &&
+            $user &&
+            ! (method_exists($user, 'puedeVerBitacora') && $user->puedeVerBitacora()) &&
+            $user->tenant_id !== null &&
+            (int) $user->tenant_id !== (int) $tenant->id &&
+            ! $request->is('logout')
+        ) {
+            BitacoraService::registrar(
+                modulo: 'autenticacion',
+                accion: 'acceso_cross_tenant_bloqueado',
+                descripcion: "Sesión cross-tenant bloqueada para {$user->email} (tenant {$user->tenant_id}) intentando acceder a {$tenant->nombre} (tenant {$tenant->id}).",
+                detalles: ['user_tenant_id' => $user->tenant_id, 'target_tenant_id' => $tenant->id],
+                nivel: 'alerta',
+                entidadTipo: 'Usuario',
+                entidadId: $user->id,
+                actor: $user
+            );
+
+            Auth::logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return redirect('/')->with('error', 'Tu sesión no pertenece a esta barbería. Inicia sesión nuevamente.');
+        }
 
         return $next($request);
     }
