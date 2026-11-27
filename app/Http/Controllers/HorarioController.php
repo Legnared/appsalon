@@ -38,11 +38,13 @@ class HorarioController extends Controller
                 ->values()
             : [];
 
+        $hoyMx = now('America/Mexico_City')->toDateString();
+
         return Inertia::render('Horarios/Index', [
             'horarios' => HorarioLaboral::ordenSemana(),
             'barberos' => $barberos,
             'ausencias' => $ausencias,
-            'hoy' => now()->toDateString(),
+            'hoy' => $hoyMx,
         ]);
     }
 
@@ -99,9 +101,11 @@ class HorarioController extends Controller
 
     public function crearAusencia(Request $request): RedirectResponse
     {
+        $hoyMx = now('America/Mexico_City')->toDateString();
+
         $validated = $request->validate([
             'barbero_id' => ['required', 'integer'],
-            'fecha_inicio' => ['required', 'date', 'after_or_equal:today'],
+            'fecha_inicio' => ['required', 'date', "after_or_equal:{$hoyMx}"],
             'fecha_fin' => ['required', 'date', 'after_or_equal:fecha_inicio'],
             'motivo' => ['nullable', 'string', 'max:140'],
             'visible_clientes' => ['nullable', 'boolean'],
@@ -110,7 +114,7 @@ class HorarioController extends Controller
             'fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
             'fecha_inicio.after_or_equal' => 'La fecha de inicio debe ser hoy o una fecha futura.',
             'fecha_fin.required' => 'La fecha de fin es obligatoria.',
-            'fecha_fin.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
+            'fecha_fin.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio (si cruza de diciembre a enero, verifica el año).',
         ]);
 
         // Verificar que el barbero pertenece al tenant actual (BelongsToTenant)

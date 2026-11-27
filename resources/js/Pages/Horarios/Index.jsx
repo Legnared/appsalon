@@ -70,6 +70,22 @@ export default function HorariosIndex({
 
     const handleCrearAusencia = (e) => {
         e.preventDefault();
+        if (
+            ausenciaForm.data.fecha_inicio &&
+            ausenciaForm.data.fecha_fin &&
+            ausenciaForm.data.fecha_fin < ausenciaForm.data.fecha_inicio
+        ) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Revisa el año de la fecha fin',
+                text: `La fecha fin (${formatearFechaCorta(ausenciaForm.data.fecha_fin)}) es anterior a la fecha inicio (${formatearFechaCorta(ausenciaForm.data.fecha_inicio)}). Si cruza de diciembre a enero, asegúrate de seleccionar el año siguiente.`,
+                background: '#1f1b17',
+                color: '#f5efe6',
+                confirmButtonColor: '#d4a259',
+            });
+            return;
+        }
+
         ausenciaForm.post(HorarioController.crearAusencia.url(), {
             preserveScroll: true,
             onSuccess: () => {
@@ -80,6 +96,28 @@ export default function HorariosIndex({
                     motivo: '',
                     visible_clientes: true,
                 });
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Ausencia registrada',
+                    text: 'Las fechas quedaron bloqueadas y ya se reflejan en el listado y en la vista de clientes.',
+                    timer: 2600,
+                    showConfirmButton: false,
+                    background: '#1f1b17',
+                    color: '#f5efe6',
+                });
+            },
+            onError: (errors) => {
+                const primerError = Object.values(errors)[0];
+                if (primerError) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'No se pudo registrar la ausencia',
+                        text: primerError,
+                        background: '#1f1b17',
+                        color: '#f5efe6',
+                        confirmButtonColor: '#b83232',
+                    });
+                }
             },
         });
     };
@@ -290,6 +328,41 @@ export default function HorariosIndex({
                                 />
                             </div>
                         </div>
+
+                        {ausenciaForm.data.fecha_inicio && ausenciaForm.data.fecha_fin && (
+                            <p
+                                style={{
+                                    margin: '1rem 0 0',
+                                    padding: '0.85rem 1.2rem',
+                                    borderRadius: '0.8rem',
+                                    fontSize: '1.3rem',
+                                    background:
+                                        ausenciaForm.data.fecha_fin < ausenciaForm.data.fecha_inicio
+                                            ? 'rgba(184, 50, 50, 0.2)'
+                                            : 'rgba(212, 162, 89, 0.1)',
+                                    border:
+                                        ausenciaForm.data.fecha_fin < ausenciaForm.data.fecha_inicio
+                                            ? '1px solid rgba(255, 130, 130, 0.45)'
+                                            : '1px solid rgba(212, 162, 89, 0.28)',
+                                    color:
+                                        ausenciaForm.data.fecha_fin < ausenciaForm.data.fecha_inicio
+                                            ? '#ffb4b4'
+                                            : '#f0c674',
+                                }}
+                            >
+                                {ausenciaForm.data.fecha_fin < ausenciaForm.data.fecha_inicio
+                                    ? `La fecha fin (${formatearFechaCorta(ausenciaForm.data.fecha_fin)}) es anterior a la fecha inicio (${formatearFechaCorta(ausenciaForm.data.fecha_inicio)}). Si cruza a enero, cambia el año.`
+                                    : ausenciaForm.data.fecha_inicio === ausenciaForm.data.fecha_fin
+                                      ? `Día bloqueado: ${formatearFechaCorta(ausenciaForm.data.fecha_inicio)}`
+                                      : `Rango bloqueado: del ${formatearFechaCorta(ausenciaForm.data.fecha_inicio)} al ${formatearFechaCorta(ausenciaForm.data.fecha_fin)}`}
+                            </p>
+                        )}
+
+                        {Object.keys(ausenciaForm.errors).length > 0 && (
+                            <div className="alerta error" style={{ marginTop: '1.2rem' }}>
+                                {Object.values(ausenciaForm.errors)[0]}
+                            </div>
+                        )}
 
                         <div className="campo" style={{ marginTop: '1.6rem' }}>
                             <label htmlFor="ausencia-motivo">Motivo (opcional, visible para clientes)</label>
