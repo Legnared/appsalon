@@ -103,4 +103,5 @@ Route::middleware(['auth', 'bitacora_admin'])->group(function () {
     Route::put('/super-admin/barberias/{tenant}', [SuperAdminTenantController::class, 'actualizar'])->name('superadmin.tenants.update');
     Route::post('/super-admin/barberias/{tenant}/toggle', [SuperAdminTenantController::class, 'toggleActivo'])->name('superadmin.tenants.toggle');
     Route::get('/super-admin/barberias/{tenant}/previsualizar', [SuperAdminTenantController::class, 'previsualizar'])->name('superadmin.tenants.previsualizar');
+    Route::post('/super-admin/correo-prueba', [SuperAdminTenantController::class, 'enviarCorreoPrueba'])->name('superadmin.mail.test');
 });

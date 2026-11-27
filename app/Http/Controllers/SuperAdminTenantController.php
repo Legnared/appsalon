@@ -12,10 +12,12 @@ use App\Services\FeatureManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class SuperAdminTenantController extends Controller
 {
@@ -50,6 +52,7 @@ class SuperAdminTenantController extends Controller
                 'nombre' => $t->nombre,
                 'slug' => $t->slug,
                 'dominio_custom' => $t->dominio_custom,
+                'public_url' => $t->publicUrl(),
                 'activo' => (bool) $t->activo,
                 'plan' => $t->plan,
                 'suscripcion_vence_en' => $t->suscripcion_vence_en?->format('Y-m-d'),
@@ -75,6 +78,12 @@ class SuperAdminTenantController extends Controller
         return Inertia::render('SuperAdmin/Index', [
             'tenants' => $lista,
             'resumen' => $resumen,
+            'infra' => [
+                'mail_mailer' => (string) config('mail.default', 'log'),
+                'resend_configurado' => ! empty(config('services.resend.key')),
+                'mail_from' => (string) config('mail.from.address', ''),
+                'base_domain' => (string) config('app.base_domain', ''),
+            ],
         ]);
     }
 
@@ -327,6 +336,47 @@ class SuperAdminTenantController extends Controller
         );
 
         return redirect('/super-admin')->with('exito', "Barbería '{$tenant->nombre}' actualizada correctamente.");
+    }
+
+    public function enviarCorreoPrueba(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:120'],
+        ], [
+            'email.required' => 'Indica un correo de destino para la prueba.',
+            'email.email' => 'El correo de destino no es válido.',
+        ]);
+
+        try {
+            $mailer = (string) config('mail.default', 'log');
+            Mail::raw(
+                "¡Prueba exitosa! Tu plataforma SaaS de Barberías envió este correo correctamente usando el driver '{$mailer}'.",
+                function ($message) use ($validated) {
+                    $message->to($validated['email'])
+                        ->subject('Prueba de Correo SaaS · BarberShop');
+                }
+            );
+
+            BitacoraService::registrar(
+                modulo: 'tenants',
+                accion: 'correo_prueba_enviado',
+                descripcion: "Correo de prueba enviado a {$validated['email']} vía {$mailer}.",
+                detalles: ['email' => $validated['email'], 'mailer' => $mailer],
+                nivel: 'exito'
+            );
+
+            return back()->with('exito', "Correo de prueba enviado a {$validated['email']} (driver: {$mailer}).");
+        } catch (Throwable $e) {
+            BitacoraService::registrar(
+                modulo: 'tenants',
+                accion: 'correo_prueba_fallido',
+                descripcion: "Error al enviar correo de prueba a {$validated['email']}: {$e->getMessage()}",
+                detalles: ['email' => $validated['email'], 'error' => $e->getMessage()],
+                nivel: 'error'
+            );
+
+            return back()->with('error', 'No se pudo enviar el correo: ' . $e->getMessage());
+        }
     }
 
     public function previsualizar(Request $request, Tenant $tenant): RedirectResponse

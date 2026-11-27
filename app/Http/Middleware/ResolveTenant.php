@@ -111,6 +111,16 @@ class ResolveTenant
             return null;
         }
 
+        $baseDomain = strtolower(trim((string) config('app.base_domain', ''), " .\t\n\r\0\x0B"));
+        if ($baseDomain !== '' && str_ends_with($host, '.' . $baseDomain)) {
+            $sub = substr($host, 0, -strlen('.' . $baseDomain));
+            if ($sub !== '' && ! str_contains($sub, '.') && ! in_array($sub, ['www', 'api', 'admin'], true)) {
+                return $sub;
+            }
+
+            return null;
+        }
+
         $parts = explode('.', $host);
         if (count($parts) < 3) {
             return null;

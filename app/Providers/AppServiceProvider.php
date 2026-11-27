@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Mail\Transports\ResendHttpTransport;
 use App\Services\TenantContext;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,5 +29,11 @@ class AppServiceProvider extends ServiceProvider
         ) {
             URL::forceScheme('https');
         }
+
+        Mail::extend('resend', function (array $config = []) {
+            $key = (string) ($config['key'] ?? config('services.resend.key', ''));
+
+            return new ResendHttpTransport($key);
+        });
     }
 }

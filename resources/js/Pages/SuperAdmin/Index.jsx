@@ -9,7 +9,47 @@ const PLAN_LABELS = {
     trial: 'Prueba / Demo',
 };
 
-export default function SuperAdminIndex({ tenants = [], resumen = {} }) {
+export default function SuperAdminIndex({ tenants = [], resumen = {}, infra = {} }) {
+    const copiarEnlace = async (url, nombre) => {
+        try {
+            await navigator.clipboard.writeText(url);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Enlace de ${nombre} copiado`,
+                showConfirmButton: false,
+                timer: 2000,
+                background: '#1f1b17',
+                color: '#f5efe6',
+            });
+        } catch {
+            // Fallback silencioso
+        }
+    };
+
+    const probarCorreo = async () => {
+        const { value: email } = await Swal.fire({
+            title: 'Enviar Correo de Prueba',
+            text: `Driver activo: ${infra.mail_mailer || 'log'} · Remitente: ${infra.mail_from || ''}`,
+            input: 'email',
+            inputPlaceholder: 'tu-correo@ejemplo.com',
+            showCancelButton: true,
+            confirmButtonText: 'Enviar prueba',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d4a259',
+            cancelButtonColor: '#28221c',
+            background: '#1f1b17',
+            color: '#f5efe6',
+        });
+
+        if (email) {
+            router.post(SuperAdminTenantController.enviarCorreoPrueba.url(), { email }, {
+                preserveScroll: true,
+            });
+        }
+    };
+
     const toggleEstado = async (tenant) => {
         const accion = tenant.activo ? 'suspender' : 'reactivar';
         const result = await Swal.fire({
@@ -56,6 +96,24 @@ export default function SuperAdminIndex({ tenants = [], resumen = {} }) {
 
             <Alertas />
 
+            <div className="bitacora-readonly-banner" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1.2rem' }}>
+                <div>
+                    <strong>Correo SaaS ({infra.mail_mailer || 'log'}):</strong>{' '}
+                    {infra.resend_configurado ? 'Resend API configurada' : 'Modo pruebas/log (configura RESEND_KEY para envíos reales)'}
+                    {' · '}
+                    <strong>Wildcard DNS:</strong>{' '}
+                    {infra.base_domain ? `*.${infra.base_domain}` : 'Sin APP_BASE_DOMAIN (usando ?tenant= en local)'}
+                </div>
+                <button
+                    type="button"
+                    className="boton boton-secundario"
+                    style={{ margin: 0, padding: '0.7rem 1.4rem', fontSize: '1.3rem' }}
+                    onClick={probarCorreo}
+                >
+                    Probar Correo
+                </button>
+            </div>
+
             <div className="resumen-kpi-grid superadmin-kpis">
                 <div className="kpi-card">
                     <span className="kpi-label">Barberías Totales</span>
@@ -94,6 +152,26 @@ export default function SuperAdminIndex({ tenants = [], resumen = {} }) {
                                         slug: <strong>{t.slug}</strong>
                                         {t.dominio_custom ? ` · ${t.dominio_custom}` : ''}
                                     </span>
+                                    {t.public_url && (
+                                        <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                            <span className="tenant-slug" style={{ fontSize: '1.15rem' }}>{t.public_url}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => copiarEnlace(t.public_url, t.nombre)}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.08)',
+                                                    border: '1px solid rgba(255,255,255,0.18)',
+                                                    color: '#f5efe6',
+                                                    borderRadius: '0.5rem',
+                                                    padding: '0.2rem 0.65rem',
+                                                    fontSize: '1.1rem',
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                Copiar link
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

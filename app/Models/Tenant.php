@@ -92,6 +92,24 @@ class Tenant extends Model
         );
     }
 
+    public function publicUrl(): string
+    {
+        if (! empty($this->dominio_custom)) {
+            $scheme = str_starts_with((string) config('app.url', ''), 'https://') || app()->environment('production')
+                ? 'https'
+                : 'http';
+
+            return "{$scheme}://{$this->dominio_custom}";
+        }
+
+        $baseDomain = trim((string) config('app.base_domain', ''), " .\t\n\r\0\x0B");
+        if ($baseDomain !== '') {
+            return "https://{$this->slug}.{$baseDomain}";
+        }
+
+        return rtrim((string) config('app.url', 'http://localhost'), '/') . '/?tenant=' . urlencode($this->slug);
+    }
+
     public function toFrontendArray(): array
     {
         return [
