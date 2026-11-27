@@ -64,7 +64,7 @@ class CorreoPersonalizadoMail extends Mailable
             'saludo' => "¡Hola! Qué gusto saludarte desde {$marca}",
             'cuerpo' => "Ya puedes agendar tu próximo corte o servicio de barba en segundos, elegir a tu barbero favorito y confirmar tu horario sin llamadas ni esperas.",
             'boton_texto' => 'Agendar mi Cita Ahora',
-            'pie' => 'Plataforma impulsada por Angel DevSign · Innovación en Código y Diseño.',
+            'pie' => "{$marca} · Todos los derechos reservados · Tecnología por Angel DevSign.",
         ];
     }
 

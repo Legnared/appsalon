@@ -14,6 +14,33 @@ const COLORES_BARBERIA = [
     { nombre: 'Acero Platino', hex: '#94a3b8' },
 ];
 
+const PLANTILLAS_DISENO = [
+    {
+        id: 'rustico_editorial',
+        nombre: '1. Rústico Editorial',
+        desc: 'Estilo clásico de barbería en carbón, cuero y tipografía Playfair Display.',
+        swatchBg: 'linear-gradient(135deg, #28221c, #141210)',
+        swatchInk: '#d4a259',
+        tag: 'Original',
+    },
+    {
+        id: 'moderno_urbano',
+        nombre: '2. Moderno Urbano',
+        desc: 'Tipografía geométrica Poppins, tarjetas glass dark y bordes definidos.',
+        swatchBg: 'linear-gradient(135deg, #1b2434, #0b1019)',
+        swatchInk: '#60a5fa',
+        tag: 'Glass Dark',
+    },
+    {
+        id: 'boutique_claro',
+        nombre: '3. Boutique Claro',
+        desc: 'Fondo marfil/blanco luminoso y texto oscuro ideal para salones y estéticas.',
+        swatchBg: 'linear-gradient(135deg, #ffffff, #efeae0)',
+        swatchInk: '#18181b',
+        tag: 'Light',
+    },
+];
+
 export default function MarcaIndex({ marcaActual }) {
     const [previewLogo, setPreviewLogo] = useState(marcaActual?.logo_url || '/img/icono.png');
     const [previewHero, setPreviewHero] = useState(marcaActual?.hero_url || '/img/1.webp');
@@ -22,6 +49,7 @@ export default function MarcaIndex({ marcaActual }) {
         nombre: marcaActual?.nombre ?? '',
         tagline: marcaActual?.tagline ?? '',
         color_primario: marcaActual?.color_primario ?? '#d4a259',
+        tema_diseno: marcaActual?.tema_diseno ?? 'rustico_editorial',
         logo: null,
         hero_imagen: null,
         eliminar_logo: false,
@@ -203,6 +231,30 @@ export default function MarcaIndex({ marcaActual }) {
                                             style={{ backgroundColor: preset.hex }}
                                         />
                                         <span>{preset.nombre}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="campo" style={{ gridColumn: '1 / -1', marginTop: '0.8rem' }}>
+                            <label>Plantilla de Diseño del Sitio (3 Estilos)</label>
+                            <div className="template-picker-grid">
+                                {PLANTILLAS_DISENO.map((tpl) => (
+                                    <button
+                                        key={tpl.id}
+                                        type="button"
+                                        className={`template-card-option ${data.tema_diseno === tpl.id ? 'activo' : ''}`}
+                                        onClick={() => setData('tema_diseno', tpl.id)}
+                                    >
+                                        <div
+                                            className="tpl-swatch-bar"
+                                            style={{ background: tpl.swatchBg, color: tpl.swatchInk }}
+                                        >
+                                            <span>{tpl.tag}</span>
+                                            <span>{data.tema_diseno === tpl.id ? '✓ Activo' : 'Elegir'}</span>
+                                        </div>
+                                        <strong>{tpl.nombre}</strong>
+                                        <small>{tpl.desc}</small>
                                     </button>
                                 ))}
                             </div>

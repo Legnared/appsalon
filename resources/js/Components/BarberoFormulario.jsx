@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PasswordInput from '@/Components/PasswordInput';
 
 export default function BarberoFormulario({
     data,
@@ -103,22 +104,40 @@ export default function BarberoFormulario({
                 />
             </div>
 
-            <div className="campo">
-                <label htmlFor="password">
-                    {esEdicion ? 'Nuevo Password' : 'Password'}
-                </label>
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder={
-                        esEdicion
-                            ? 'Déjalo vacío para conservar el actual'
-                            : 'Mínimo 6 caracteres'
-                    }
-                    value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
-                />
+            <div
+                style={{
+                    margin: '1.6rem 0',
+                    padding: '1.4rem 1.6rem',
+                    borderRadius: '1.1rem',
+                    border: '1px solid rgba(212, 162, 89, 0.35)',
+                    background: 'rgba(212, 162, 89, 0.06)',
+                }}
+            >
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#d4a259', marginBottom: '0.5rem' }}>
+                    {esEdicion ? 'Restablecer Contraseña de Acceso' : 'Contraseña Inicial de Acceso'}
+                </div>
+                <p style={{ margin: '0 0 1rem', fontSize: '1.25rem', opacity: 0.78 }}>
+                    {esEdicion
+                        ? 'Si este barbero o administrador olvidó su contraseña, escribe una nueva aquí y guarda cambios. Déjalo vacío para conservar la actual.'
+                        : 'Asigna la contraseña inicial con la que entrará al sistema (mínimo 6 caracteres).'}
+                </p>
+                <div className="campo" style={{ marginBottom: 0 }}>
+                    <label htmlFor="password">
+                        {esEdicion ? 'Nueva Contraseña' : 'Contraseña'}
+                    </label>
+                    <PasswordInput
+                        id="password"
+                        name="password"
+                        placeholder={
+                            esEdicion
+                                ? 'Escribe una nueva contraseña (mín. 6 caracteres)...'
+                                : 'Mínimo 6 caracteres'
+                        }
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        autoComplete="new-password"
+                    />
+                </div>
             </div>
 
             <div className="campo campo-columna">

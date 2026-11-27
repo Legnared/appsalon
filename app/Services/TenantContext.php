@@ -94,6 +94,7 @@ class TenantContext
             'logo_url' => '/img/icono.png',
             'hero_url' => '/img/1.webp',
             'color_primario' => '#d4a259',
+            'tema_diseno' => 'rustico_editorial',
             'whatsapp_negocio' => (string) config('payments.whatsapp_negocio', ''),
             'plan' => 'anual',
         ];

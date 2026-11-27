@@ -10,6 +10,7 @@
         $tenantNombre = isset($currentTenant) && $currentTenant ? $currentTenant->nombre : config('app.name', "Danny's BarberShop");
         $tenantLogo = isset($currentTenant) && $currentTenant ? $currentTenant->logo_url : '/img/icono.png';
         $tenantColor = strtolower((string) (isset($currentTenant) && $currentTenant ? ($currentTenant->color_primario ?: '#d4a259') : '#d4a259'));
+        $tenantTema = isset($currentTenant) && $currentTenant ? $currentTenant->temaDiseno() : 'rustico_editorial';
         $esTemaCustom = $tenantColor !== '#d4a259';
     @endphp
     <title inertia>{{ $tenantNombre }}</title>
@@ -19,7 +20,8 @@
         }
     </style>
     <script>
-        document.documentElement.dataset.customTheme = {{ $esTemaCustom ? "'true'" : "'false'" }};
+        document.documentElement.dataset.customTheme = '{{ $esTemaCustom ? 'true' : 'false' }}';
+        document.documentElement.dataset.designTemplate = '{{ $tenantTema }}';
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

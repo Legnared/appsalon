@@ -109,6 +109,7 @@ class SuperAdminTenantController extends Controller
             'suscripcion_vence_en' => ['nullable', 'date'],
             'tagline' => ['nullable', 'string', 'max:120'],
             'color_primario' => ['nullable', 'string', 'max:20'],
+            'tema_diseno' => ['nullable', 'in:rustico_editorial,moderno_urbano,boutique_claro'],
             'whatsapp_negocio' => ['nullable', 'string', 'max:30'],
             'payment_driver' => ['required', 'in:sandbox,mercadopago,bank_api'],
             'anticipo_tipo' => ['required', 'in:fijo,porcentaje'],
@@ -253,6 +254,7 @@ class SuperAdminTenantController extends Controller
                 'suscripcion_vence_en' => $tenant->suscripcion_vence_en?->format('Y-m-d') ?? '',
                 'tagline' => $tenant->tagline ?? '',
                 'color_primario' => $tenant->color_primario ?: '#d4a259',
+                'tema_diseno' => $tenant->temaDiseno(),
                 'whatsapp_negocio' => $tenant->whatsapp_negocio ?? '',
                 'payment_driver' => $tenant->payment_driver ?: 'sandbox',
                 'anticipo_tipo' => $tenant->anticipo_tipo ?: 'fijo',
@@ -286,6 +288,7 @@ class SuperAdminTenantController extends Controller
             'suscripcion_vence_en' => ['nullable', 'date'],
             'tagline' => ['nullable', 'string', 'max:120'],
             'color_primario' => ['nullable', 'string', 'max:20'],
+            'tema_diseno' => ['nullable', 'in:rustico_editorial,moderno_urbano,boutique_claro'],
             'whatsapp_negocio' => ['nullable', 'string', 'max:30'],
             'payment_driver' => ['required', 'in:sandbox,mercadopago,bank_api'],
             'anticipo_tipo' => ['required', 'in:fijo,porcentaje'],
@@ -309,6 +312,9 @@ class SuperAdminTenantController extends Controller
 
         $extra = is_array($tenant->configuracion_extra) ? $tenant->configuracion_extra : [];
         $extra['features'] = $this->sanitizeFeatures($validated['features'] ?? [], $validated['plan']);
+        if (! empty($validated['tema_diseno'])) {
+            $extra['tema_diseno'] = $validated['tema_diseno'];
+        }
 
         if (is_array($validated['email_template'] ?? null)) {
             $defaultsTpl = CorreoPersonalizadoMail::defaults(trim($validated['nombre']));

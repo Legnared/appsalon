@@ -21,6 +21,7 @@ class MarcaController extends Controller
                 'nombre' => $tenant?->nombre ?? config('app.name', "Danny's BarberShop"),
                 'tagline' => $tenant?->tagline ?? 'Corte Clásico · Barba · Estilo Artesanal',
                 'color_primario' => $tenant?->color_primario ?: '#d4a259',
+                'tema_diseno' => $tenant?->temaDiseno() ?? 'rustico_editorial',
                 'logo_url' => $tenant?->logo_url ?? '/img/icono.png',
                 'hero_url' => $tenant?->hero_url ?? '/img/1.webp',
                 'tiene_logo_custom' => (bool) ($tenant?->logo && ! str_starts_with($tenant->logo, '/img/')),
@@ -41,6 +42,7 @@ class MarcaController extends Controller
             'nombre' => ['required', 'string', 'max:120'],
             'tagline' => ['nullable', 'string', 'max:120'],
             'color_primario' => ['required', 'string', 'max:20'],
+            'tema_diseno' => ['nullable', 'in:rustico_editorial,moderno_urbano,boutique_claro'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'hero_imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'eliminar_logo' => ['nullable', 'boolean'],
@@ -79,12 +81,18 @@ class MarcaController extends Controller
             $rutaHero = $request->file('hero_imagen')->store($tenantContext->storagePath('branding'), 'public');
         }
 
+        $extra = is_array($tenant->configuracion_extra) ? $tenant->configuracion_extra : [];
+        if (! empty($validated['tema_diseno'])) {
+            $extra['tema_diseno'] = $validated['tema_diseno'];
+        }
+
         $tenant->update([
             'nombre' => trim($validated['nombre']),
             'tagline' => trim((string) ($validated['tagline'] ?? '')) ?: null,
             'color_primario' => strtolower(trim($validated['color_primario'])),
             'logo' => $rutaLogo,
             'hero_imagen' => $rutaHero,
+            'configuracion_extra' => $extra,
         ]);
 
         BitacoraService::registrar(

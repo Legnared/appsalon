@@ -110,6 +110,15 @@ class Tenant extends Model
         return rtrim((string) config('app.url', 'http://localhost'), '/') . '/?tenant=' . urlencode($this->slug);
     }
 
+    public function temaDiseno(): string
+    {
+        $tema = (string) ($this->configuracion_extra['tema_diseno'] ?? 'rustico_editorial');
+
+        return in_array($tema, ['rustico_editorial', 'moderno_urbano', 'boutique_claro'], true)
+            ? $tema
+            : 'rustico_editorial';
+    }
+
     public function toFrontendArray(): array
     {
         return [
@@ -120,6 +129,7 @@ class Tenant extends Model
             'logo_url' => $this->logo_url,
             'hero_url' => $this->hero_url,
             'color_primario' => $this->color_primario ?: '#d4a259',
+            'tema_diseno' => $this->temaDiseno(),
             'whatsapp_negocio' => $this->whatsapp_negocio ?: (string) config('payments.whatsapp_negocio'),
             'plan' => $this->plan,
         ];

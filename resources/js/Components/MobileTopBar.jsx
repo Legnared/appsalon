@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { confirmarCerrarSesion } from '@/Components/AppSidebar';
 import BitacoraController from '@/actions/App/Http/Controllers/BitacoraController';
+import PerfilController from '@/actions/App/Http/Controllers/PerfilController';
 import SuperAdminTenantController from '@/actions/App/Http/Controllers/SuperAdminTenantController';
 
 export default function MobileTopBar() {
@@ -18,7 +19,11 @@ export default function MobileTopBar() {
 
     return (
         <header className="mobile-top-bar">
-            <div className="mobile-top-left">
+            <Link
+                href={PerfilController.index.url()}
+                className="mobile-top-left mobile-profile-trigger"
+                title="Mi Perfil y Contraseña"
+            >
                 <div className="mobile-avatar">
                     {usuario.foto_url ? (
                         <img src={usuario.foto_url} alt={usuario.nombreCompleto} />
@@ -28,9 +33,11 @@ export default function MobileTopBar() {
                 </div>
                 <div className="mobile-user-info">
                     <span className="mobile-brand">{marca} · {rolLabel}</span>
-                    <strong className="mobile-greeting">Hola, {usuario.nombre}</strong>
+                    <strong className="mobile-greeting">
+                        Hola, {usuario.nombre} <span className="mobile-profile-tag">Perfil ✎</span>
+                    </strong>
                 </div>
-            </div>
+            </Link>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 {puedeVerBitacora && (

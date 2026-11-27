@@ -11,7 +11,9 @@ use App\Http\Controllers\HorarioController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PagoWebhookController;
+use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\ServicioController;
+use App\Http\Controllers\SuperAdminCuentaController;
 use App\Http\Controllers\SuperAdminTenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,8 +35,11 @@ Route::post('/crear-cuenta', [AuthController::class, 'crear'])->name('register.s
 Route::get('/mensaje', [AuthController::class, 'mensaje'])->name('register.message');
 Route::get('/confirmar-cuenta', [AuthController::class, 'confirmar'])->name('register.confirm');
 
-// Área Privada — Citas del Cliente
+// Área Privada — Citas del Cliente y Mi Perfil
 Route::middleware('auth')->group(function () {
+    Route::get('/mi-perfil', [PerfilController::class, 'index'])->name('perfil.index');
+    Route::post('/mi-perfil', [PerfilController::class, 'actualizar'])->name('perfil.update');
+
     Route::get('/cita', [CitaController::class, 'index'])->name('cita.index');
 
     // API de Citas y Servicios
@@ -104,4 +109,9 @@ Route::middleware(['auth', 'bitacora_admin'])->group(function () {
     Route::post('/super-admin/barberias/{tenant}/toggle', [SuperAdminTenantController::class, 'toggleActivo'])->name('superadmin.tenants.toggle');
     Route::get('/super-admin/barberias/{tenant}/previsualizar', [SuperAdminTenantController::class, 'previsualizar'])->name('superadmin.tenants.previsualizar');
     Route::post('/super-admin/correo-prueba', [SuperAdminTenantController::class, 'enviarCorreoPrueba'])->name('superadmin.mail.test');
+
+    Route::get('/super-admin/cuenta-roles', [SuperAdminCuentaController::class, 'index'])->name('superadmin.cuenta.index');
+    Route::post('/super-admin/cuenta-roles/perfil', [SuperAdminCuentaController::class, 'actualizarPerfil'])->name('superadmin.cuenta.perfil');
+    Route::post('/super-admin/cuenta-roles/usuarios/{usuarioId}/cambiar-password', [SuperAdminCuentaController::class, 'cambiarPasswordUsuario'])->name('superadmin.cuenta.usuario.password');
+    Route::post('/super-admin/cuenta-roles/usuarios/{usuarioId}/enviar-reset', [SuperAdminCuentaController::class, 'enviarResetUsuario'])->name('superadmin.cuenta.usuario.reset');
 });

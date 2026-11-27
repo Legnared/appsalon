@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import Alertas from '@/Components/Alertas';
+import PasswordInput from '@/Components/PasswordInput';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
 
 export default function CrearCuenta() {
@@ -72,13 +73,13 @@ export default function CrearCuenta() {
                 </div>
                 <div className="campo">
                     <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
+                    <PasswordInput
                         id="password"
                         name="password"
-                        placeholder="Tu Password"
+                        placeholder="Tu Password (mín. 6 caracteres)"
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
+                        autoComplete="new-password"
                     />
                 </div>
                 <input

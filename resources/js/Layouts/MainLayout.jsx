@@ -25,6 +25,7 @@ export default function MainLayout({ children }) {
     const heroUrl = tenant?.hero_url || '/img/1.webp';
     const heroFallback = heroUrl === '/img/1.webp' ? '/img/1.jpg' : heroUrl;
     const accentHex = (tenant?.color_primario || '#d4a259').toLowerCase();
+    const temaDiseno = tenant?.tema_diseno || 'rustico_editorial';
     const esTemaCustom = accentHex !== '#d4a259';
     const onAccent = getContrastText(accentHex);
 
@@ -33,6 +34,7 @@ export default function MainLayout({ children }) {
         root.style.setProperty('--tenant-accent', accentHex);
         root.style.setProperty('--tenant-on-accent', onAccent);
         root.dataset.customTheme = esTemaCustom ? 'true' : 'false';
+        root.dataset.designTemplate = temaDiseno;
 
         // Sincronizar favicon y apple-touch-icon en vivo al cambiar logo o barbería
         document
@@ -40,7 +42,7 @@ export default function MainLayout({ children }) {
             .forEach((link) => {
                 link.setAttribute('href', logoUrl);
             });
-    }, [accentHex, onAccent, esTemaCustom, logoUrl]);
+    }, [accentHex, onAccent, esTemaCustom, temaDiseno, logoUrl]);
 
     const accentStyle = {
         '--accent-gold': accentHex,

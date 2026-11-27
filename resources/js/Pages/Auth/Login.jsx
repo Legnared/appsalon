@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import Alertas from '@/Components/Alertas';
+import PasswordInput from '@/Components/PasswordInput';
 import AuthController from '@/actions/App/Http/Controllers/AuthController';
 
 export default function Login() {
@@ -36,13 +37,13 @@ export default function Login() {
                 </div>
                 <div className="campo">
                     <label htmlFor="password">Password</label>
-                    <input
-                        type="password"
+                    <PasswordInput
                         id="password"
-                        placeholder="Tu Password"
                         name="password"
+                        placeholder="Tu Password"
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
+                        autoComplete="current-password"
                     />
                 </div>
                 <input

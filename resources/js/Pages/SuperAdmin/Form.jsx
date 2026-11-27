@@ -30,6 +30,7 @@ export default function SuperAdminForm({
         suscripcion_vence_en: tenant?.suscripcion_vence_en ?? '',
         tagline: tenant?.tagline ?? 'Corte Clásico · Barba · Estilo',
         color_primario: tenant?.color_primario ?? '#d4a259',
+        tema_diseno: tenant?.tema_diseno ?? 'rustico_editorial',
         whatsapp_negocio: tenant?.whatsapp_negocio ?? '',
         payment_driver: tenant?.payment_driver ?? 'sandbox',
         anticipo_tipo: tenant?.anticipo_tipo ?? 'fijo',
@@ -48,7 +49,7 @@ export default function SuperAdminForm({
             saludo: tenant?.email_template?.saludo ?? '¡Hola! Qué gusto saludarte desde {barberia}',
             cuerpo: tenant?.email_template?.cuerpo ?? 'Ya puedes agendar tu próximo corte o servicio de barba en segundos, elegir a tu barbero favorito y confirmar tu horario sin llamadas ni esperas.',
             boton_texto: tenant?.email_template?.boton_texto ?? 'Agendar mi Cita Ahora',
-            pie: tenant?.email_template?.pie ?? 'Plataforma impulsada por Angel DevSign · Innovación en Código y Diseño.',
+            pie: tenant?.email_template?.pie ?? '{barberia} · Todos los derechos reservados · Tecnología por Angel DevSign.',
         },
         // Campos exclusivos de alta rápida
         dueno_nombre: '',
@@ -250,6 +251,19 @@ export default function SuperAdminForm({
                                 onChange={(e) => setData('whatsapp_negocio', e.target.value)}
                                 placeholder="5216310000000"
                             />
+                        </div>
+
+                        <div className="campo" style={{ gridColumn: '1 / -1' }}>
+                            <label htmlFor="tema_diseno">Plantilla de Diseño del Sitio (Multi-Tenant)</label>
+                            <select
+                                id="tema_diseno"
+                                value={data.tema_diseno}
+                                onChange={(e) => setData('tema_diseno', e.target.value)}
+                            >
+                                <option value="rustico_editorial">1. Rústico Editorial (Clásico Barbería · Danny's)</option>
+                                <option value="moderno_urbano">2. Moderno Urbano (Glass Dark · Geométrico Poppins)</option>
+                                <option value="boutique_claro">3. Boutique Claro (Elegante Light · Fondo Marfil)</option>
+                            </select>
                         </div>
                     </div>
                 </section>

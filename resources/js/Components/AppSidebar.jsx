@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 import AdminController from '@/actions/App/Http/Controllers/AdminController';
@@ -8,7 +9,9 @@ import CitaController from '@/actions/App/Http/Controllers/CitaController';
 import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
 import HorarioController from '@/actions/App/Http/Controllers/HorarioController';
 import MarcaController from '@/actions/App/Http/Controllers/MarcaController';
+import PerfilController from '@/actions/App/Http/Controllers/PerfilController';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
+import SuperAdminCuentaController from '@/actions/App/Http/Controllers/SuperAdminCuentaController';
 import SuperAdminTenantController from '@/actions/App/Http/Controllers/SuperAdminTenantController';
 import useFeature from '@/hooks/useFeature';
 
@@ -33,6 +36,7 @@ export async function confirmarCerrarSesion() {
 
 export default function AppSidebar() {
     const { url, props } = usePage();
+    const [sistemaAbierto, setSistemaAbierto] = useState(true);
     const usuario = props?.auth?.user;
     const tenant = props?.tenant;
     const marca = tenant?.nombre || "Danny's BarberShop";
@@ -157,31 +161,61 @@ export default function AppSidebar() {
                         </Link>
 
                         {puedeVerBitacora && (
-                            <>
-                                <Link
-                                    href={SuperAdminTenantController.index.url()}
-                                    className={`sidebar-link ${isPath('/super-admin') ? 'activo' : ''}`}
+                            <div className="sidebar-group">
+                                <button
+                                    type="button"
+                                    className="sidebar-group-toggle"
+                                    onClick={() => setSistemaAbierto((v) => !v)}
+                                    aria-expanded={sistemaAbierto}
                                 >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                                        <polyline points="9 22 9 12 15 12 15 22" />
-                                    </svg>
-                                    <span>Super-Admin SaaS</span>
-                                </Link>
+                                    <span>Sistema &amp; SaaS</span>
+                                    <span>{sistemaAbierto ? '▾' : '▸'}</span>
+                                </button>
 
-                                <Link
-                                    href={BitacoraController.index.url()}
-                                    className={`sidebar-link ${isPath('/bitacora') ? 'activo' : ''}`}
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                        <polyline points="14 2 14 8 20 8" />
-                                        <line x1="16" y1="13" x2="8" y2="13" />
-                                        <line x1="16" y1="17" x2="8" y2="17" />
-                                    </svg>
-                                    <span>Bitácora (Solo Lectura)</span>
-                                </Link>
-                            </>
+                                {sistemaAbierto && (
+                                    <ul className="sidebar-group-list">
+                                        <li>
+                                            <Link
+                                                href={SuperAdminTenantController.index.url()}
+                                                className={`sidebar-link ${url === '/super-admin' || isPath('/super-admin/barberias') ? 'activo' : ''}`}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                                    <polyline points="9 22 9 12 15 12 15 22" />
+                                                </svg>
+                                                <span>Barberías SaaS</span>
+                                            </Link>
+                                        </li>
+
+                                        <li>
+                                            <Link
+                                                href={SuperAdminCuentaController.index.url()}
+                                                className={`sidebar-link ${isPath('/super-admin/cuenta-roles') ? 'activo' : ''}`}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                </svg>
+                                                <span>Mi Cuenta y Roles</span>
+                                            </Link>
+                                        </li>
+
+                                        <li>
+                                            <Link
+                                                href={BitacoraController.index.url()}
+                                                className={`sidebar-link ${isPath('/bitacora') ? 'activo' : ''}`}
+                                            >
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                    <polyline points="14 2 14 8 20 8" />
+                                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                                </svg>
+                                                <span>Bitácora (Solo Lectura)</span>
+                                            </Link>
+                                        </li>
+                                    </ul>
+                                )}
+                            </div>
                         )}
                     </>
                 )}
@@ -261,7 +295,11 @@ export default function AppSidebar() {
             </nav>
 
             <div className="sidebar-footer">
-                <div className="sidebar-user">
+                <Link
+                    href={PerfilController.index.url()}
+                    className={`sidebar-user sidebar-user-link ${isPath('/mi-perfil') ? 'activo' : ''}`}
+                    title="Abrir Mi Perfil y Contraseña"
+                >
                     <div className="sidebar-avatar">
                         {usuario.foto_url ? (
                             <img src={usuario.foto_url} alt={usuario.nombreCompleto} />
@@ -272,8 +310,9 @@ export default function AppSidebar() {
                     <div className="sidebar-user-meta">
                         <strong>{usuario.nombreCompleto}</strong>
                         <span>{usuario.email}</span>
+                        <em className="sidebar-profile-pill">Mi Perfil ✎</em>
                     </div>
-                </div>
+                </Link>
 
                 <button
                     type="button"

@@ -1,0 +1,473 @@
+// =========================================================================
+// Spec 019 (Menú Agrupado UL + Matriz de Roles) + Spec 020 (3 Plantillas de Diseño)
+// =========================================================================
+
+// Input de contraseña con ojito (Mostrar / Ocultar)
+.password-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    flex: 1;
+
+    input {
+        width: 100%;
+        padding-right: 4.4rem !important;
+    }
+}
+
+.password-eye-btn {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3.2rem;
+    height: 3.2rem;
+    border: none;
+    background: transparent;
+    color: rgba(245, 239, 230, 0.72);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 0.6rem;
+    padding: 0;
+    transition: color 0.15s ease, background 0.15s ease;
+
+    svg {
+        width: 1.9rem;
+        height: 1.9rem;
+    }
+
+    &:hover {
+        color: var(--tenant-accent, #d4a259);
+        background: rgba(255, 255, 255, 0.06);
+    }
+}
+
+html[data-design-template='boutique_claro'] .password-eye-btn {
+    color: rgba(24, 24, 27, 0.65);
+
+    &:hover {
+        color: var(--tenant-accent, #18181b);
+        background: rgba(24, 24, 27, 0.06);
+    }
+}
+
+// Tarjeta visible de Mi Perfil en Sidebar y MobileTopBar
+.sidebar-user-link {
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--tenant-accent, #d4a259) 42%, transparent);
+    background: color-mix(in srgb, var(--tenant-accent, #d4a259) 10%, rgba(255, 255, 255, 0.03));
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.14s ease;
+
+    &:hover,
+    &.activo {
+        border-color: var(--tenant-accent, #d4a259);
+        background: color-mix(in srgb, var(--tenant-accent, #d4a259) 20%, rgba(255, 255, 255, 0.05));
+        transform: translateY(-1px);
+    }
+}
+
+.sidebar-profile-pill {
+    display: inline-block;
+    margin-top: 0.35rem;
+    padding: 0.18rem 0.65rem;
+    border-radius: 999px;
+    font-style: normal;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background: color-mix(in srgb, var(--tenant-accent, #d4a259) 22%, transparent);
+    color: color-mix(in srgb, var(--tenant-accent, #d4a259) 85%, #ffffff);
+    border: 1px solid color-mix(in srgb, var(--tenant-accent, #d4a259) 48%, transparent);
+    width: fit-content;
+}
+
+.mobile-profile-trigger {
+    text-decoration: none;
+    color: inherit;
+    padding: 0.3rem 0.7rem 0.3rem 0.35rem;
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--tenant-accent, #d4a259) 38%, transparent);
+    background: color-mix(in srgb, var(--tenant-accent, #d4a259) 10%, transparent);
+}
+
+.mobile-profile-tag {
+    display: inline-block;
+    margin-left: 0.45rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    font-size: 1rem;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--tenant-accent, #d4a259) 24%, transparent);
+    color: color-mix(in srgb, var(--tenant-accent, #d4a259) 85%, #ffffff);
+    vertical-align: middle;
+}
+
+// Menú agrupado colapsable <ul> dentro del Sidebar (solo Super-Admin)
+.sidebar-group {
+    margin-top: 0.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.14);
+}
+
+.sidebar-group-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    border: none;
+    background: transparent;
+    color: rgba(245, 239, 230, 0.72);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.12rem;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &:hover {
+        color: #ffffff;
+    }
+}
+
+.sidebar-group-list {
+    list-style: none;
+    margin: 0.4rem 0 0;
+    padding: 0 0 0 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    border-left: 2px solid rgba(212, 162, 89, 0.3);
+
+    li {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+// Matriz de Roles y Permisos
+.roles-matrix-wrap {
+    overflow-x: auto;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.roles-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.3rem;
+
+    th,
+    td {
+        padding: 1.1rem 1.2rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    th {
+        font-size: 1.15rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(245, 239, 230, 0.7);
+        background: rgba(0, 0, 0, 0.25);
+        white-space: nowrap;
+    }
+
+    td small {
+        display: block;
+        font-size: 1.1rem;
+        color: rgba(245, 239, 230, 0.55);
+    }
+
+    .num-col,
+    .perm-col {
+        text-align: center;
+    }
+}
+
+.perm-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1.25rem;
+
+    &.si {
+        background: rgba(50, 159, 0, 0.22);
+        color: #7ee34c;
+        border: 1px solid rgba(50, 159, 0, 0.45);
+    }
+
+    &.no {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(245, 239, 230, 0.35);
+    }
+}
+
+// Selector visual de las 3 Plantillas de Diseño
+.template-picker-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    margin-top: 0.8rem;
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.template-card-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1.4rem;
+    border-radius: 1.2rem;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 17, 22, 0.65);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.18s ease, transform 0.15s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    &.activo {
+        border-color: var(--tenant-accent, #d4a259);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--tenant-accent, #d4a259) 32%, transparent);
+    }
+
+    .tpl-swatch-bar {
+        height: 4.2rem;
+        border-radius: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    strong {
+        font-size: 1.45rem;
+        color: #ffffff;
+    }
+
+    small {
+        font-size: 1.18rem;
+        color: rgba(245, 239, 230, 0.68);
+        line-height: 1.4;
+    }
+}
+
+// =========================================================================
+// PLANTILLA 2: MODERNO URBANO (Glass Dark · Geométrico Poppins)
+// =========================================================================
+html[data-design-template='moderno_urbano'] {
+    h1, h2, h3,
+    .nombre-pagina,
+    .brand-title,
+    .marca-titulo,
+    .horario-dia-nombre {
+        font-family: 'Poppins', sans-serif !important;
+        letter-spacing: -0.02em;
+    }
+
+    .kpi-card,
+    .tenant-card,
+    .superadmin-section,
+    .agenda-control,
+    .horario-dia-card,
+    .servicio,
+    .citas li,
+    .servicios li,
+    .formulario {
+        border-radius: 0.85rem;
+        backdrop-filter: blur(14px);
+    }
+
+    .app-sidebar .sidebar-nav .sidebar-link,
+    .boton,
+    .boton-secundario,
+    .boton-eliminar {
+        border-radius: 0.7rem;
+        letter-spacing: 0.02em;
+    }
+}
+
+// =========================================================================
+// PLANTILLA 3: BOUTIQUE CLARO (Elegante Light · Fondo Marfil Luminoso)
+// =========================================================================
+html[data-design-template='boutique_claro'] {
+    --light-bg: #f6f4ef;
+    --light-surface: #ffffff;
+    --light-surface-2: #efece5;
+    --light-ink: #18181b;
+    --light-muted: #52525b;
+    --light-border: rgba(24, 24, 27, 0.12);
+
+    body {
+        background-color: var(--light-bg);
+        color: var(--light-ink);
+    }
+
+    .app-shell,
+    .contenedor-app {
+        background: linear-gradient(160deg, #faf9f6 0%, #f1ede4 100%) !important;
+    }
+
+    h1, h2, h3, p,
+    .nombre-pagina,
+    .agenda-fecha-titulo,
+    .horario-dia-nombre,
+    .tenant-title-wrap h3,
+    .tenant-stats-row strong,
+    .feature-toggle-info strong,
+    .marca-upload-label {
+        color: var(--light-ink);
+    }
+
+    .descripcion-pagina,
+    .kpi-label,
+    .tenant-slug,
+    .superadmin-hint,
+    .feature-toggle-info small,
+    .agenda-campo label,
+    .campo label,
+    .superadmin-grid-2 .campo label {
+        color: var(--light-muted);
+    }
+
+    .app-sidebar {
+        background-color: #ffffff !important;
+        border-right: 1px solid var(--light-border) !important;
+
+        .sidebar-full-bg {
+            opacity: 0.1;
+        }
+
+        .sidebar-brand-content {
+            background: rgba(255, 255, 255, 0.92) !important;
+            border-color: var(--light-border) !important;
+
+            .brand-title {
+                color: var(--light-ink);
+            }
+            .brand-role {
+                color: var(--light-muted);
+            }
+        }
+
+        .sidebar-nav .sidebar-link {
+            background: #ffffff !important;
+            color: var(--light-ink) !important;
+            border-color: var(--light-border) !important;
+
+            &:hover {
+                background: var(--light-surface-2) !important;
+            }
+
+            &.activo {
+                background: var(--tenant-accent, #d4a259) !important;
+                color: var(--tenant-on-accent, #ffffff) !important;
+                border-color: var(--tenant-accent, #d4a259) !important;
+            }
+        }
+
+        .sidebar-group-toggle {
+            color: var(--light-muted);
+        }
+
+        .sidebar-footer {
+            background: #faf9f6 !important;
+            border-top-color: var(--light-border) !important;
+
+            .sidebar-user-meta strong {
+                color: var(--light-ink);
+            }
+            .sidebar-user-meta span {
+                color: var(--light-muted);
+            }
+        }
+    }
+
+    .mobile-top-bar,
+    .bottom-tab-bar {
+        background: rgba(255, 255, 255, 0.96) !important;
+        border-color: var(--light-border) !important;
+        color: var(--light-ink);
+
+        .mobile-greeting {
+            color: var(--light-ink);
+        }
+    }
+
+    .formulario,
+    .barra,
+    .kpi-card,
+    .tenant-card,
+    .superadmin-section,
+    .agenda-control,
+    .horario-dia-card,
+    .bitacora-readonly-banner,
+    .bitacora-filtros,
+    .citas li,
+    .servicios li,
+    .servicio,
+    .estado-vacio,
+    .pagos-bloque,
+    .marca-upload-card {
+        background: var(--light-surface) !important;
+        border-color: var(--light-border) !important;
+        box-shadow: 0 8px 24px rgba(24, 24, 27, 0.06);
+        color: var(--light-ink);
+    }
+
+    .tenant-stats-row,
+    .feature-toggle-card,
+    .roles-matrix-table th {
+        background: var(--light-surface-2) !important;
+        color: var(--light-ink);
+    }
+
+    .campo input,
+    .campo select,
+    .campo textarea,
+    .agenda-campo input,
+    .agenda-campo select,
+    .barber-datepicker .barber-datepicker-trigger {
+        background-color: #faf9f6 !important;
+        color: var(--light-ink) !important;
+        border-color: rgba(24, 24, 27, 0.18) !important;
+        color-scheme: light;
+    }
+
+    .boton-secundario,
+    .boton-cerrar-sesion,
+    .agenda-control .agenda-nav-rapida .btn-agenda {
+        background-color: var(--light-surface-2) !important;
+        color: var(--light-ink) !important;
+        border-color: var(--light-border) !important;
+    }
+
+    .template-card-option {
+        background: #ffffff;
+        border-color: var(--light-border);
+
+        strong {
+            color: var(--light-ink);
+        }
+        small {
+            color: var(--light-muted);
+        }
+    }
+}
