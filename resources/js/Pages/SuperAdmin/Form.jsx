@@ -13,6 +13,33 @@ const COLORES_BARBERIA = [
     { nombre: 'Acero Platino', hex: '#94a3b8' },
 ];
 
+const PLANTILLAS_DISENO = [
+    {
+        id: 'rustico_editorial',
+        nombre: '1. Rústico Editorial',
+        desc: 'Estilo clásico de barbería en carbón, cuero y tipografía Playfair Display.',
+        swatchBg: 'linear-gradient(135deg, #28221c, #141210)',
+        swatchInk: '#d4a259',
+        tag: 'Original',
+    },
+    {
+        id: 'moderno_urbano',
+        nombre: '2. Moderno Urbano',
+        desc: 'Tipografía geométrica Poppins, tarjetas glass dark y bordes definidos.',
+        swatchBg: 'linear-gradient(135deg, #1b2434, #0b1019)',
+        swatchInk: '#60a5fa',
+        tag: 'Glass Dark',
+    },
+    {
+        id: 'boutique_claro',
+        nombre: '3. Boutique Claro',
+        desc: 'Fondo marfil/blanco luminoso y texto oscuro ideal para salones y estéticas.',
+        swatchBg: 'linear-gradient(135deg, #ffffff, #efeae0)',
+        swatchInk: '#18181b',
+        tag: 'Light',
+    },
+];
+
 export default function SuperAdminForm({
     modo = 'crear',
     tenant = null,
@@ -253,17 +280,28 @@ export default function SuperAdminForm({
                             />
                         </div>
 
-                        <div className="campo" style={{ gridColumn: '1 / -1' }}>
-                            <label htmlFor="tema_diseno">Plantilla de Diseño del Sitio (Multi-Tenant)</label>
-                            <select
-                                id="tema_diseno"
-                                value={data.tema_diseno}
-                                onChange={(e) => setData('tema_diseno', e.target.value)}
-                            >
-                                <option value="rustico_editorial">1. Rústico Editorial (Clásico Barbería · Danny's)</option>
-                                <option value="moderno_urbano">2. Moderno Urbano (Glass Dark · Geométrico Poppins)</option>
-                                <option value="boutique_claro">3. Boutique Claro (Elegante Light · Fondo Marfil)</option>
-                            </select>
+                        <div className="campo" style={{ gridColumn: '1 / -1', marginTop: '0.6rem' }}>
+                            <label>Plantilla de Diseño del Sitio (3 Estilos · Exclusivo Super-Admin)</label>
+                            <div className="template-picker-grid">
+                                {PLANTILLAS_DISENO.map((tpl) => (
+                                    <button
+                                        key={tpl.id}
+                                        type="button"
+                                        className={`template-card-option ${data.tema_diseno === tpl.id ? 'activo' : ''}`}
+                                        onClick={() => setData('tema_diseno', tpl.id)}
+                                    >
+                                        <div
+                                            className="tpl-swatch-bar"
+                                            style={{ background: tpl.swatchBg, color: tpl.swatchInk }}
+                                        >
+                                            <span>{tpl.tag}</span>
+                                            <span>{data.tema_diseno === tpl.id ? '✓ Activo' : 'Elegir'}</span>
+                                        </div>
+                                        <strong>{tpl.nombre}</strong>
+                                        <small>{tpl.desc}</small>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </section>

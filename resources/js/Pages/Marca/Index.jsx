@@ -178,7 +178,10 @@ export default function MarcaIndex({ marcaActual }) {
                 </section>
 
                 <section className="superadmin-section">
-                    <h3>2. Nombre, Eslogan y Color Principal</h3>
+                    <h3>2. Nombre Visible y Eslogan</h3>
+                    <p className="superadmin-hint">
+                        El color del tema y la plantilla de diseño son administrados por soporte técnico para conservar la identidad visual de tu barbería.
+                    </p>
 
                     <div className="superadmin-grid-2">
                         <div className="campo">
@@ -201,63 +204,6 @@ export default function MarcaIndex({ marcaActual }) {
                                 onChange={(e) => setData('tagline', e.target.value)}
                                 placeholder="Corte Clásico · Barba · Estilo"
                             />
-                        </div>
-
-                        <div className="campo" style={{ gridColumn: '1 / -1' }}>
-                            <label htmlFor="color_primario">Color del Tema (Paleta Barbería)</label>
-                            <div className="color-picker-row">
-                                <input
-                                    id="color_primario"
-                                    type="color"
-                                    value={data.color_primario}
-                                    onChange={(e) => setData('color_primario', e.target.value)}
-                                />
-                                <input
-                                    type="text"
-                                    value={data.color_primario}
-                                    onChange={(e) => setData('color_primario', e.target.value)}
-                                />
-                            </div>
-                            <div className="color-presets-row">
-                                {COLORES_BARBERIA.map((preset) => (
-                                    <button
-                                        key={preset.hex}
-                                        type="button"
-                                        className={`color-preset-btn ${data.color_primario?.toLowerCase() === preset.hex ? 'activo' : ''}`}
-                                        onClick={() => setData('color_primario', preset.hex)}
-                                    >
-                                        <span
-                                            className="color-preset-dot"
-                                            style={{ backgroundColor: preset.hex }}
-                                        />
-                                        <span>{preset.nombre}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="campo" style={{ gridColumn: '1 / -1', marginTop: '0.8rem' }}>
-                            <label>Plantilla de Diseño del Sitio (3 Estilos)</label>
-                            <div className="template-picker-grid">
-                                {PLANTILLAS_DISENO.map((tpl) => (
-                                    <button
-                                        key={tpl.id}
-                                        type="button"
-                                        className={`template-card-option ${data.tema_diseno === tpl.id ? 'activo' : ''}`}
-                                        onClick={() => setData('tema_diseno', tpl.id)}
-                                    >
-                                        <div
-                                            className="tpl-swatch-bar"
-                                            style={{ background: tpl.swatchBg, color: tpl.swatchInk }}
-                                        >
-                                            <span>{tpl.tag}</span>
-                                            <span>{data.tema_diseno === tpl.id ? '✓ Activo' : 'Elegir'}</span>
-                                        </div>
-                                        <strong>{tpl.nombre}</strong>
-                                        <small>{tpl.desc}</small>
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                     </div>
                 </section>
