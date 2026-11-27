@@ -6,10 +6,12 @@ import Barra from '@/Components/Barra';
 import BarberDatePicker from '@/Components/BarberDatePicker';
 import GuiaTipoRostro, { TIPOS_ROSTRO } from '@/Components/GuiaTipoRostro';
 import MetodoPagoSelector, { calcularMontoAnticipo } from '@/Components/MetodoPagoSelector';
+import PaginadorLista from '@/Components/PaginadorLista';
 import APIController from '@/actions/App/Http/Controllers/APIController';
 
 const PASO_INICIAL = 1;
 const PASO_FINAL = 3;
+const CATALOGO_POR_PAGINA = 6;
 
 function formatearFechaMX(fechaStr) {
     if (!fechaStr) return '';
@@ -60,6 +62,8 @@ export default function CitaIndex({
     const [paso, setPaso] = useState(PASO_INICIAL);
     const [servicios, setServicios] = useState(serviciosIniciales);
     const [tipoRostroFiltro, setTipoRostroFiltro] = useState('');
+    const [paginaServicios, setPaginaServicios] = useState(1);
+    const [paginaProductos, setPaginaProductos] = useState(1);
     const [serviciosSeleccionados, setServiciosSeleccionados] = useState([]);
     const [barberoId, setBarberoId] = useState(barberoInicial);
     const [paraQuien, setParaQuien] = useState('titular');
@@ -73,7 +77,7 @@ export default function CitaIndex({
     const [alertaFormulario, setAlertaFormulario] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const [tipoCobro, setTipoCobro] = useState('anticipo');
-    const [metodoPago, setMetodoPago] = useState('tarjeta_online');
+    const [metodoPago, setMetodoPago] = useState('efectivo');
     const [terminalModo, setTerminalModo] = useState('en_sucursal');
     const [tarjeta, setTarjeta] = useState({
         titular: usuario?.nombreCompleto ?? '',
@@ -232,7 +236,7 @@ export default function CitaIndex({
     }, [totalServicios, pagoConfig]);
 
     const montoAPagarAhora = useMemo(() => {
-        if (metodoPago === 'terminal_pos') return 0;
+        if (metodoPago === 'terminal_pos' || metodoPago === 'efectivo') return 0;
         const puedeAnticipo = totalServicios > montoAnticipoActual && montoAnticipoActual > 0;
         return tipoCobro === 'anticipo' && puedeAnticipo ? montoAnticipoActual : totalServicios;
     }, [metodoPago, tipoCobro, totalServicios, montoAnticipoActual]);
@@ -272,7 +276,10 @@ export default function CitaIndex({
                 usuarioId: usuario.id,
                 nombre: usuario.nombreCompleto,
                 servicios: serviciosSeleccionados.map((s) => s.id),
-                tipo_cobro: metodoPago === 'terminal_pos' ? 'total' : tipoCobro,
+                tipo_cobro:
+                    metodoPago === 'terminal_pos' || metodoPago === 'efectivo'
+                        ? 'total'
+                        : tipoCobro,
                 metodo_pago: metodoPago,
                 terminal_modo: terminalModo,
                 ...(metodoPago === 'tarjeta_online' && !esMercadoPagoPro
@@ -379,13 +386,35 @@ export default function CitaIndex({
         }
     };
 
+    const soloServicios = useMemo(() => {
+        return servicios.filter((s) => (s.tipo || 'servicio') !== 'producto');
+    }, [servicios]);
+
+    const productosDisponibles = useMemo(() => {
+        return servicios.filter((s) => s.tipo === 'producto');
+    }, [servicios]);
+
     const serviciosMostrados = useMemo(() => {
-        if (!tipoRostroFiltro) return servicios;
-        const filtrados = servicios.filter(
+        if (!tipoRostroFiltro) return soloServicios;
+        const filtrados = soloServicios.filter(
             (s) => Array.isArray(s.tipos_rostro) && s.tipos_rostro.includes(tipoRostroFiltro)
         );
-        return filtrados.length > 0 ? filtrados : servicios;
-    }, [servicios, tipoRostroFiltro]);
+        return filtrados.length > 0 ? filtrados : soloServicios;
+    }, [soloServicios, tipoRostroFiltro]);
+
+    useEffect(() => {
+        setPaginaServicios(1);
+    }, [tipoRostroFiltro]);
+
+    const serviciosPaginados = useMemo(() => {
+        const inicio = (paginaServicios - 1) * CATALOGO_POR_PAGINA;
+        return serviciosMostrados.slice(inicio, inicio + CATALOGO_POR_PAGINA);
+    }, [serviciosMostrados, paginaServicios]);
+
+    const productosPaginados = useMemo(() => {
+        const inicio = (paginaProductos - 1) * CATALOGO_POR_PAGINA;
+        return productosDisponibles.slice(inicio, inicio + CATALOGO_POR_PAGINA);
+    }, [productosDisponibles, paginaProductos]);
 
     const nombreRostroFiltro = useMemo(() => {
         return TIPOS_ROSTRO.find((t) => t.id === tipoRostroFiltro)?.nombre ?? '';
@@ -531,7 +560,7 @@ export default function CitaIndex({
                     />
 
                     <div id="servicios" className="listado-servicios">
-                        {serviciosMostrados.map((servicio) => {
+                        {serviciosPaginados.map((servicio) => {
                             const seleccionado = serviciosSeleccionados.some(
                                 (s) => s.id === servicio.id
                             );
@@ -582,6 +611,91 @@ export default function CitaIndex({
                             );
                         })}
                     </div>
+
+                    <PaginadorLista
+                        total={serviciosMostrados.length}
+                        paginaActual={paginaServicios}
+                        porPagina={CATALOGO_POR_PAGINA}
+                        onCambiarPagina={setPaginaServicios}
+                        etiqueta="servicios"
+                        scrollTarget="#servicios"
+                    />
+
+                    {productosDisponibles.length > 0 && (
+                        <div id="productos-cuidado" style={{ marginTop: '3.2rem' }}>
+                            <h2>Productos de Cuidado Masculino</h2>
+                            <p className="text-center">
+                                Agrega pomadas, ceras, aceites o bálsamos a tu cita para recoger en
+                                barbería
+                            </p>
+
+                            <div className="listado-servicios">
+                                {productosPaginados.map((producto) => {
+                                    const seleccionado = serviciosSeleccionados.some(
+                                        (s) => s.id === producto.id
+                                    );
+                                    const agotado =
+                                        producto.stock !== null &&
+                                        producto.stock !== undefined &&
+                                        Number(producto.stock) <= 0;
+
+                                    return (
+                                        <div
+                                            key={producto.id}
+                                            className={`servicio ${seleccionado ? 'seleccionado' : ''}`}
+                                            style={
+                                                agotado
+                                                    ? { opacity: 0.55, cursor: 'not-allowed' }
+                                                    : undefined
+                                            }
+                                            data-id-servicio={producto.id}
+                                            onClick={() => {
+                                                if (!agotado) toggleServicio(producto);
+                                            }}
+                                        >
+                                            {producto.imagen_url && (
+                                                <div className="servicio-foto">
+                                                    <img
+                                                        src={producto.imagen_url}
+                                                        alt={producto.nombre}
+                                                        loading="lazy"
+                                                    />
+                                                </div>
+                                            )}
+                                            <p className="nombre-servicio">{producto.nombre}</p>
+                                            {producto.descripcion && (
+                                                <p className="descripcion-servicio">
+                                                    {producto.descripcion}
+                                                </p>
+                                            )}
+                                            <div className="servicio-footer-meta">
+                                                <span className="duracion-servicio">
+                                                    {agotado
+                                                        ? 'Agotado'
+                                                        : producto.stock !== null &&
+                                                            producto.stock !== undefined
+                                                          ? `Producto · ${producto.stock} disp.`
+                                                          : 'Producto'}
+                                                </span>
+                                                <p className="precio-servicio">
+                                                    ${producto.precio}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <PaginadorLista
+                                total={productosDisponibles.length}
+                                paginaActual={paginaProductos}
+                                porPagina={CATALOGO_POR_PAGINA}
+                                onCambiarPagina={setPaginaProductos}
+                                etiqueta="productos"
+                                scrollTarget="#productos-cuidado"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div id="paso-2" className={`seccion ${paso === 2 ? 'mostrar' : ''}`}>
@@ -864,7 +978,9 @@ export default function CitaIndex({
                                       ? `Pagar $${montoAPagarAhora.toFixed(2)} y Reservar Cita`
                                       : metodoPago === 'transferencia'
                                         ? `Reservar y Transferir $${montoAPagarAhora.toFixed(2)} (SPEI)`
-                                        : 'Reservar Cita (Pagar en Barbería)'}
+                                        : metodoPago === 'efectivo'
+                                          ? 'Reservar Cita (Pagar en Efectivo)'
+                                          : 'Reservar Cita (Pagar en Terminal)'}
                             </button>
                         </>
                     )}

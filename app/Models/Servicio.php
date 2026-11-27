@@ -18,10 +18,12 @@ class Servicio extends Model
     protected $fillable = [
         'tenant_id',
         'nombre',
+        'tipo',
         'precio',
         'descripcion',
         'imagen',
         'duracion_minutos',
+        'stock',
         'activo',
         'tipos_rostro',
         'recomendacion_rostro',
@@ -36,9 +38,15 @@ class Servicio extends Model
         return [
             'precio' => 'decimal:2',
             'duracion_minutos' => 'integer',
+            'stock' => 'integer',
             'activo' => 'boolean',
             'tipos_rostro' => 'array',
         ];
+    }
+
+    public function esProducto(): bool
+    {
+        return ($this->tipo ?? 'servicio') === 'producto';
     }
 
     protected function imagenUrl(): Attribute

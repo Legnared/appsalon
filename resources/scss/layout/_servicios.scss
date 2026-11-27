@@ -163,16 +163,21 @@
 
 .listado-servicios {
     display: grid;
-    gap: 1.6rem;
-    margin-top: 2.2rem;
+    grid-template-columns: 1fr;
+    gap: 1.4rem;
+    margin-top: 1.8rem;
 
     @include m.tablet {
-        @include m.grid(2, 1.6rem);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @include m.desktop {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .servicio {
         background: linear-gradient(145deg, v.$cuero, v.$nogal);
-        padding: 2.2rem 1.8rem;
+        padding: 1.7rem 1.5rem;
         border-radius: 1.3rem;
         border: 1px solid rgba(212, 162, 89, 0.22);
         transition: transform 0.18s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;

@@ -46,8 +46,9 @@ export default function MetodoPagoSelector({
     const totalNum = Number(total || 0);
     const montoAnticipo = calcularMontoAnticipo(totalNum, pagoConfig);
     const puedeAnticipo = totalNum > montoAnticipo && montoAnticipo > 0;
-    const usaAnticipo = metodoPago !== 'terminal_pos' && tipoCobro === 'anticipo' && puedeAnticipo;
-    const montoAhora = metodoPago === 'terminal_pos' ? 0 : usaAnticipo ? montoAnticipo : totalNum;
+    const esEnSucursal = metodoPago === 'terminal_pos' || metodoPago === 'efectivo';
+    const usaAnticipo = !esEnSucursal && tipoCobro === 'anticipo' && puedeAnticipo;
+    const montoAhora = esEnSucursal ? 0 : usaAnticipo ? montoAnticipo : totalNum;
     const saldoRestante = Math.max(0, Math.round((totalNum - montoAhora) * 100) / 100);
     const esMercadoPagoPro = pagoConfig?.driver === 'mercadopago';
     const spei = pagoConfig?.spei || {};
@@ -78,14 +79,23 @@ export default function MetodoPagoSelector({
                 <strong className="pagos-total-monto">${totalNum.toFixed(2)} MXN</strong>
             </div>
 
-            <div className="pagos-metodos-grid tres-columnas" role="radiogroup" aria-label="Método de pago">
+            <div
+                className="pagos-metodos-grid"
+                role="radiogroup"
+                aria-label="Método de pago"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(19rem, 1fr))',
+                    gap: '1rem',
+                }}
+            >
                 <button
                     type="button"
-                    className={`metodo-card ${metodoPago === 'tarjeta_online' ? 'activo' : ''}`}
-                    onClick={() => setMetodoPago('tarjeta_online')}
+                    className={`metodo-card ${metodoPago === 'efectivo' ? 'activo' : ''}`}
+                    onClick={() => setMetodoPago('efectivo')}
                 >
-                    <strong>Tarjeta / Mercado Pago</strong>
-                    <span>Crédito, débito o cuenta Mercado Pago con confirmación inmediata.</span>
+                    <strong>Efectivo en Barbería</strong>
+                    <span>Paga con dinero físico al llegar o terminar tu servicio.</span>
                 </button>
 
                 <button
@@ -102,12 +112,21 @@ export default function MetodoPagoSelector({
                     className={`metodo-card ${metodoPago === 'terminal_pos' ? 'activo' : ''}`}
                     onClick={() => setMetodoPago('terminal_pos')}
                 >
-                    <strong>Terminal Point / Efectivo</strong>
-                    <span>Paga al llegar a la barbería con terminal Mercado Pago Point o efectivo.</span>
+                    <strong>Terminal Point</strong>
+                    <span>Paga al llegar a la barbería con tarjeta en terminal física.</span>
+                </button>
+
+                <button
+                    type="button"
+                    className={`metodo-card ${metodoPago === 'tarjeta_online' ? 'activo' : ''}`}
+                    onClick={() => setMetodoPago('tarjeta_online')}
+                >
+                    <strong>Tarjeta / Mercado Pago</strong>
+                    <span>Crédito, débito o cuenta Mercado Pago con confirmación inmediata.</span>
                 </button>
             </div>
 
-            {metodoPago !== 'terminal_pos' && puedeAnticipo && (
+            {!esEnSucursal && puedeAnticipo && (
                 <div className="pagos-tipo-cobro">
                     <span className="pagos-subtitulo">¿Cuánto deseas pagar ahora?</span>
                     <div className="tipo-cobro-grid">
@@ -255,6 +274,18 @@ export default function MetodoPagoSelector({
                     <p className="nota-seguridad" style={{ marginTop: '1rem' }}>
                         Al pulsar reservar, tu lugar quedará apartado y te daremos un botón directo
                         para enviar tu comprobante por WhatsApp a la barbería.
+                    </p>
+                </div>
+            )}
+
+            {metodoPago === 'efectivo' && (
+                <div className="spei-datos-card">
+                    <p className="spei-titulo">Pago en Efectivo al Llegar a la Barbería</p>
+                    <p className="nota-seguridad" style={{ marginTop: 0 }}>
+                        Tu lugar queda apartado sin pago previo. Liquidarás{' '}
+                        <strong>${totalNum.toFixed(2)} MXN</strong> en dinero físico al terminar tu
+                        servicio. Si ese día prefieres pagar con terminal o transferencia SPEI, tu
+                        barbero podrá cambiarlo sin problema al cobrarte.
                     </p>
                 </div>
             )}

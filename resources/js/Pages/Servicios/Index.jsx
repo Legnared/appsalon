@@ -1,10 +1,37 @@
+import { useMemo, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Swal from 'sweetalert2';
 import Alertas from '@/Components/Alertas';
 import Barra from '@/Components/Barra';
+import PaginadorLista from '@/Components/PaginadorLista';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
+const SERVICIOS_POR_PAGINA = 6;
+
 export default function ServiciosIndex({ servicios = [] }) {
+    const [filtroTipo, setFiltroTipo] = useState('todos');
+    const [pagina, setPagina] = useState(1);
+
+    const totalServicios = useMemo(
+        () => servicios.filter((s) => (s.tipo || 'servicio') !== 'producto'),
+        [servicios]
+    );
+    const totalProductos = useMemo(
+        () => servicios.filter((s) => s.tipo === 'producto'),
+        [servicios]
+    );
+
+    const catalogoFiltrado = useMemo(() => {
+        if (filtroTipo === 'servicio') return totalServicios;
+        if (filtroTipo === 'producto') return totalProductos;
+        return servicios;
+    }, [filtroTipo, servicios, totalServicios, totalProductos]);
+
+    const catalogoPaginado = useMemo(() => {
+        const inicio = (pagina - 1) * SERVICIOS_POR_PAGINA;
+        return catalogoFiltrado.slice(inicio, inicio + SERVICIOS_POR_PAGINA);
+    }, [catalogoFiltrado, pagina]);
+
     const handleToggleActivo = (servicio) => {
         router.post(
             ServicioController.toggleActivo.url(),
@@ -18,9 +45,10 @@ export default function ServiciosIndex({ servicios = [] }) {
     };
 
     const handleEliminar = async (servicio) => {
+        const esProd = servicio.tipo === 'producto';
         const result = await Swal.fire({
             icon: 'warning',
-            title: '¿Eliminar servicio?',
+            title: esProd ? '¿Eliminar producto?' : '¿Eliminar servicio?',
             text: `Se eliminará "${servicio.nombre}". Si solo deseas dejar de ofrecerlo temporalmente, puedes usar "Ocultar".`,
             showCancelButton: true,
             confirmButtonText: 'Sí, eliminar',
@@ -42,11 +70,11 @@ export default function ServiciosIndex({ servicios = [] }) {
 
     return (
         <>
-            <Head title="Servicios" />
+            <Head title="Servicios y Productos" />
 
-            <h1 className="nombre-pagina">Servicios</h1>
+            <h1 className="nombre-pagina">Servicios y Productos</h1>
             <p className="descripcion-pagina">
-                Catálogo artesanal de cortes, barba y tratamientos
+                Catálogo artesanal de cortes, barba, tratamientos y productos de cuidado masculino
             </p>
 
             <Barra />
@@ -54,26 +82,64 @@ export default function ServiciosIndex({ servicios = [] }) {
 
             <div className="resumen-kpi-grid">
                 <div className="kpi-card">
-                    <span className="kpi-label">Servicios activos</span>
+                    <span className="kpi-label">Servicios / Productos activos</span>
                     <strong className="kpi-valor">
-                        {servicios.filter((s) => s.activo !== false).length} / {servicios.length}
+                        {totalServicios.filter((s) => s.activo !== false).length} serv ·{' '}
+                        {totalProductos.filter((s) => s.activo !== false).length} prod
                     </strong>
                 </div>
                 <div className="kpi-card">
                     <span className="kpi-label">Agregar al catálogo</span>
-                    <Link
-                        href={ServicioController.showCrear.url()}
-                        className="boton"
-                        style={{ margin: '0.6rem 0 0', minHeight: '4rem', padding: '0.8rem 1.4rem', fontSize: '1.4rem' }}
-                    >
-                        + Nuevo Servicio
-                    </Link>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginTop: '0.6rem' }}>
+                        <Link
+                            href={ServicioController.showCrear.url()}
+                            className="boton"
+                            style={{ margin: 0, minHeight: '3.8rem', padding: '0.7rem 1.2rem', fontSize: '1.35rem' }}
+                        >
+                            + Nuevo Servicio
+                        </Link>
+                        <Link
+                            href={ServicioController.showCrear.url({ query: { tipo: 'producto' } })}
+                            className="boton-secundario"
+                            style={{ margin: 0, minHeight: '3.8rem', padding: '0.7rem 1.2rem', fontSize: '1.35rem' }}
+                        >
+                            + Nuevo Producto
+                        </Link>
+                    </div>
                 </div>
             </div>
 
+            <div
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.8rem',
+                    marginBottom: '1.8rem',
+                }}
+            >
+                {[
+                    { id: 'todos', label: `Todos (${servicios.length})` },
+                    { id: 'servicio', label: `Servicios (${totalServicios.length})` },
+                    { id: 'producto', label: `Productos (${totalProductos.length})` },
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                            setFiltroTipo(tab.id);
+                            setPagina(1);
+                        }}
+                        className={`btn-agenda ${filtroTipo === tab.id ? 'activo' : ''}`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
             <ul className="servicios">
-                {servicios.map((servicio) => {
+                {catalogoPaginado.map((servicio) => {
                     const estaActivo = servicio.activo !== false;
+                    const esProd = servicio.tipo === 'producto';
                     return (
                         <li
                             key={servicio.id}
@@ -107,9 +173,33 @@ export default function ServiciosIndex({ servicios = [] }) {
                                     </div>
 
                                     <div className="servicio-meta-badges">
-                                        <span className="meta-pill">
-                                            {servicio.duracion_minutos || 30} min
-                                        </span>
+                                        {esProd ? (
+                                            <>
+                                                <span
+                                                    className="meta-pill"
+                                                    style={{
+                                                        background: 'rgba(212, 162, 89, 0.2)',
+                                                        color: '#f0c674',
+                                                        border: '1px solid rgba(212, 162, 89, 0.4)',
+                                                    }}
+                                                >
+                                                    Producto
+                                                </span>
+                                                {servicio.stock !== null && servicio.stock !== undefined && (
+                                                    <span
+                                                        className={`meta-pill ${Number(servicio.stock) > 0 ? 'pill-activo' : 'pill-oculto'}`}
+                                                    >
+                                                        {Number(servicio.stock) > 0
+                                                            ? `Stock: ${servicio.stock}`
+                                                            : 'Agotado'}
+                                                    </span>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <span className="meta-pill">
+                                                {servicio.duracion_minutos || 30} min
+                                            </span>
+                                        )}
                                         <span
                                             className={`meta-pill ${estaActivo ? 'pill-activo' : 'pill-oculto'}`}
                                         >
@@ -159,6 +249,14 @@ export default function ServiciosIndex({ servicios = [] }) {
                     );
                 })}
             </ul>
+
+            <PaginadorLista
+                total={catalogoFiltrado.length}
+                paginaActual={pagina}
+                porPagina={SERVICIOS_POR_PAGINA}
+                onCambiarPagina={setPagina}
+                etiqueta={filtroTipo === 'producto' ? 'productos' : filtroTipo === 'servicio' ? 'servicios' : 'artículos'}
+            />
         </>
     );
 }

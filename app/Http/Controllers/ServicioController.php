@@ -20,31 +20,38 @@ class ServicioController extends Controller
         ]);
     }
 
-    public function showCrear(): Response
+    public function showCrear(Request $request): Response
     {
-        return Inertia::render('Servicios/Crear');
+        return Inertia::render('Servicios/Crear', [
+            'tipoInicial' => $request->query('tipo') === 'producto' ? 'producto' : 'servicio',
+        ]);
     }
 
     public function crear(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'tipo' => ['nullable', 'in:servicio,producto'],
             'nombre' => ['required', 'string', 'max:60'],
             'precio' => ['required', 'numeric', 'min:0'],
             'descripcion' => ['nullable', 'string', 'max:500'],
-            'duracion_minutos' => ['nullable', 'integer', 'min:5', 'max:480'],
+            'duracion_minutos' => ['nullable', 'integer', 'min:0', 'max:480'],
+            'stock' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'activo' => ['nullable', 'boolean'],
             'tipos_rostro' => ['nullable', 'array'],
             'tipos_rostro.*' => ['string', 'in:redondo,ovalado,cuadrado,alargado,diamante'],
             'recomendacion_rostro' => ['nullable', 'string', 'max:255'],
             'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ], [
-            'nombre.required' => 'El Nombre del Servicio es Obligatorio',
-            'precio.required' => 'El Precio del Servicio es Obligatorio',
+            'nombre.required' => 'El Nombre es Obligatorio',
+            'precio.required' => 'El Precio es Obligatorio',
             'precio.numeric' => 'El precio no es válido',
             'imagen.image' => 'El archivo debe ser una imagen válida',
             'imagen.mimes' => 'La imagen debe ser JPG, PNG o WEBP',
             'imagen.max' => 'La imagen no debe superar 4 MB',
         ]);
+
+        $tipo = $validated['tipo'] ?? 'servicio';
+        $esProducto = $tipo === 'producto';
 
         $rutaImagen = null;
         if ($request->hasFile('imagen')) {
@@ -52,27 +59,31 @@ class ServicioController extends Controller
         }
 
         $servicio = Servicio::create([
+            'tipo' => $tipo,
             'nombre' => $validated['nombre'],
             'precio' => $validated['precio'],
             'descripcion' => $validated['descripcion'] ?? null,
-            'duracion_minutos' => $validated['duracion_minutos'] ?? 30,
+            'duracion_minutos' => $esProducto ? 0 : ($validated['duracion_minutos'] ?? 30),
+            'stock' => $esProducto && $request->filled('stock') ? (int) $validated['stock'] : null,
             'activo' => $request->has('activo') ? $request->boolean('activo') : true,
-            'tipos_rostro' => $validated['tipos_rostro'] ?? [],
-            'recomendacion_rostro' => $validated['recomendacion_rostro'] ?? null,
+            'tipos_rostro' => $esProducto ? [] : ($validated['tipos_rostro'] ?? []),
+            'recomendacion_rostro' => $esProducto ? null : ($validated['recomendacion_rostro'] ?? null),
             'imagen' => $rutaImagen,
         ]);
 
+        $etiqueta = $esProducto ? 'Producto' : 'Servicio';
+
         BitacoraService::registrar(
             modulo: 'servicios',
-            accion: 'servicio_creado',
-            descripcion: "Servicio '{$servicio->nombre}' creado con precio \${$servicio->precio} MXN.",
-            detalles: ['nombre' => $servicio->nombre, 'precio' => (float) $servicio->precio, 'activo' => (bool) $servicio->activo],
+            accion: $esProducto ? 'producto_creado' : 'servicio_creado',
+            descripcion: "{$etiqueta} '{$servicio->nombre}' creado con precio \${$servicio->precio} MXN.",
+            detalles: ['tipo' => $tipo, 'nombre' => $servicio->nombre, 'precio' => (float) $servicio->precio, 'stock' => $servicio->stock, 'activo' => (bool) $servicio->activo],
             nivel: 'exito',
             entidadTipo: 'Servicio',
             entidadId: $servicio->id
         );
 
-        return redirect('/servicios')->with('exito', 'Servicio creado correctamente');
+        return redirect('/servicios')->with('exito', "{$etiqueta} creado correctamente");
     }
 
     public function showActualizar(Request $request): Response|RedirectResponse
@@ -109,10 +120,12 @@ class ServicioController extends Controller
         }
 
         $validated = $request->validate([
+            'tipo' => ['nullable', 'in:servicio,producto'],
             'nombre' => ['required', 'string', 'max:60'],
             'precio' => ['required', 'numeric', 'min:0'],
             'descripcion' => ['nullable', 'string', 'max:500'],
-            'duracion_minutos' => ['nullable', 'integer', 'min:5', 'max:480'],
+            'duracion_minutos' => ['nullable', 'integer', 'min:0', 'max:480'],
+            'stock' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'activo' => ['nullable', 'boolean'],
             'tipos_rostro' => ['nullable', 'array'],
             'tipos_rostro.*' => ['string', 'in:redondo,ovalado,cuadrado,alargado,diamante'],
@@ -120,13 +133,16 @@ class ServicioController extends Controller
             'eliminar_imagen' => ['nullable', 'boolean'],
             'imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ], [
-            'nombre.required' => 'El Nombre del Servicio es Obligatorio',
-            'precio.required' => 'El Precio del Servicio es Obligatorio',
+            'nombre.required' => 'El Nombre es Obligatorio',
+            'precio.required' => 'El Precio es Obligatorio',
             'precio.numeric' => 'El precio no es válido',
             'imagen.image' => 'El archivo debe ser una imagen válida',
             'imagen.mimes' => 'La imagen debe ser JPG, PNG o WEBP',
             'imagen.max' => 'La imagen no debe superar 4 MB',
         ]);
+
+        $tipo = $validated['tipo'] ?? ($servicio->tipo ?: 'servicio');
+        $esProducto = $tipo === 'producto';
 
         $rutaImagen = $servicio->imagen;
 
@@ -143,27 +159,31 @@ class ServicioController extends Controller
         }
 
         $servicio->update([
+            'tipo' => $tipo,
             'nombre' => $validated['nombre'],
             'precio' => $validated['precio'],
             'descripcion' => $validated['descripcion'] ?? null,
-            'duracion_minutos' => $validated['duracion_minutos'] ?? 30,
+            'duracion_minutos' => $esProducto ? 0 : ($validated['duracion_minutos'] ?? 30),
+            'stock' => $esProducto && $request->filled('stock') ? (int) $validated['stock'] : null,
             'activo' => $request->has('activo') ? $request->boolean('activo') : $servicio->activo,
-            'tipos_rostro' => $validated['tipos_rostro'] ?? [],
-            'recomendacion_rostro' => $validated['recomendacion_rostro'] ?? null,
+            'tipos_rostro' => $esProducto ? [] : ($validated['tipos_rostro'] ?? []),
+            'recomendacion_rostro' => $esProducto ? null : ($validated['recomendacion_rostro'] ?? null),
             'imagen' => $rutaImagen,
         ]);
 
+        $etiqueta = $esProducto ? 'Producto' : 'Servicio';
+
         BitacoraService::registrar(
             modulo: 'servicios',
-            accion: 'servicio_actualizado',
-            descripcion: "Servicio '{$servicio->nombre}' actualizado (\${$servicio->precio} MXN).",
-            detalles: ['nombre' => $servicio->nombre, 'precio' => (float) $servicio->precio, 'activo' => (bool) $servicio->activo],
+            accion: $esProducto ? 'producto_actualizado' : 'servicio_actualizado',
+            descripcion: "{$etiqueta} '{$servicio->nombre}' actualizado (\${$servicio->precio} MXN).",
+            detalles: ['tipo' => $tipo, 'nombre' => $servicio->nombre, 'precio' => (float) $servicio->precio, 'stock' => $servicio->stock, 'activo' => (bool) $servicio->activo],
             nivel: 'info',
             entidadTipo: 'Servicio',
             entidadId: $servicio->id
         );
 
-        return redirect('/servicios')->with('exito', 'Servicio actualizado correctamente');
+        return redirect('/servicios')->with('exito', "{$etiqueta} actualizado correctamente");
     }
 
     public function toggleActivo(Request $request): RedirectResponse

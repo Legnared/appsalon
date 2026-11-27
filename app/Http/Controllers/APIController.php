@@ -353,6 +353,27 @@ class APIController extends Controller
                         'monto_esperado' => $montoACobrar,
                     ],
                 ]);
+            } elseif ($metodoPago === 'efectivo') {
+                $referenciaEfectivo = 'EFEC-' . $cita->id . '-' . strtoupper(substr(uniqid(), -4));
+                $mensajePago = "Pagarás $" . number_format($montoTotal, 2) . " MXN en efectivo al llegar a la barbería.";
+
+                $pago = Pago::create([
+                    'citaId' => $cita->id,
+                    'usuarioId' => $usuarioId,
+                    'monto' => $montoTotal,
+                    'monto_total' => $montoTotal,
+                    'monto_pagado' => 0.0,
+                    'saldo_pendiente' => $montoTotal,
+                    'moneda' => $moneda,
+                    'tipo_cobro' => 'total',
+                    'metodo' => 'efectivo',
+                    'gateway' => 'efectivo',
+                    'estado' => 'pendiente',
+                    'referencia_bancaria' => $referenciaEfectivo,
+                    'respuesta_payload' => [
+                        'modalidad' => 'pago_en_sucursal_efectivo',
+                    ],
+                ]);
             } else {
                 $paymentResult = $gateway->initiateTerminalPayment(
                     $cita,

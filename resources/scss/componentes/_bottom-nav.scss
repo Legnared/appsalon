@@ -25,10 +25,13 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    scroll-behavior: smooth;
 
     @include m.tablet {
         height: 100vh;
         overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(212, 162, 89, 0.45) rgba(20, 18, 16, 0.4);
     }
 }
 
@@ -36,10 +39,16 @@
     width: 100%;
     max-width: 82rem;
     margin: 0 auto;
-    padding: 1.8rem 1.6rem 10.5rem;
+    padding: 1.6rem 1.4rem 10rem;
 
     @include m.tablet {
-        padding: 3.6rem 4rem 6rem;
+        max-width: 98rem;
+        padding: 2.6rem 2.8rem 5rem;
+    }
+
+    @include m.desktop {
+        max-width: 118rem;
+        padding: 2.8rem 3.4rem 5rem;
     }
 }
 

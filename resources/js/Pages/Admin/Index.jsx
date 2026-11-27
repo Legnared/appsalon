@@ -1,12 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Barra from '@/Components/Barra';
 import BarberDatePicker from '@/Components/BarberDatePicker';
+import PaginadorLista from '@/Components/PaginadorLista';
 import AdminController from '@/actions/App/Http/Controllers/AdminController';
 import APIController from '@/actions/App/Http/Controllers/APIController';
 import PagoController from '@/actions/App/Http/Controllers/PagoController';
+
+const CITAS_POR_PAGINA = 6;
 
 function sumarDias(fechaStr, dias) {
     const [y, m, d] = fechaStr.split('-').map(Number);
@@ -37,7 +40,12 @@ export default function AdminIndex({
     soloBarbero = false,
 }) {
     const [busqueda, setBusqueda] = useState('');
+    const [pagina, setPagina] = useState(1);
     const [cargandoFecha, setCargandoFecha] = useState(false);
+
+    useEffect(() => {
+        setPagina(1);
+    }, [fecha, barberoFiltro, busqueda]);
 
     const hoyStr = useMemo(() => {
         const now = new Date();
@@ -102,6 +110,7 @@ export default function AdminIndex({
         if (pago.estado === 'anticipo_pagado') return 'ANTICIPO PAGADO';
         if (pago.estado === 'fallido') return 'FALLIDO';
         if (pago.metodo === 'transferencia') return 'PENDIENTE SPEI';
+        if (pago.metodo === 'efectivo') return 'PENDIENTE EFECTIVO';
         return 'PENDIENTE EN SUCURSAL';
     };
 
@@ -211,7 +220,11 @@ export default function AdminIndex({
         const saldoPendiente = Number(cita.pago.saldo_pendiente ?? cita.total ?? 0);
         const pagadoPrevio = Number(cita.pago.monto_pagado ?? 0);
         const metodoDefecto =
-            cita.pago.metodo === 'transferencia' ? 'transferencia' : 'terminal_pos';
+            cita.pago.metodo === 'efectivo'
+                ? 'efectivo'
+                : cita.pago.metodo === 'transferencia'
+                  ? 'transferencia'
+                  : 'terminal_pos';
 
         const { value: formValues, isConfirmed } = await Swal.fire({
             title: `Liquidar Saldo · Cita #${cita.id}`,
@@ -222,11 +235,14 @@ export default function AdminIndex({
                         ${pagadoPrevio > 0 ? ` · Anticipo: <strong style="color:#9be3ff;">$${pagadoPrevio.toFixed(2)}</strong>` : ''}
                         <br/>Saldo a liquidar: <strong style="color:#d4a259;font-size:1.6rem;">$${saldoPendiente.toFixed(2)} MXN</strong>
                     </p>
+                    <p style="margin:0;font-size:1.25rem;color:#c8bfb2;">
+                        Elige cómo pagó realmente el cliente (puedes cambiarlo aunque haya reservado otro método):
+                    </p>
                     <label style="color:#b9afa1;">Método de liquidación</label>
                     <select id="swal-metodo" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;">
-                        <option value="terminal_pos" ${metodoDefecto === 'terminal_pos' ? 'selected' : ''}>Terminal Mercado Pago Point</option>
+                        <option value="efectivo" ${metodoDefecto === 'efectivo' ? 'selected' : ''}>Efectivo en Caja (Dinero físico)</option>
                         <option value="transferencia" ${metodoDefecto === 'transferencia' ? 'selected' : ''}>Transferencia Bancaria (SPEI Confirmada)</option>
-                        <option value="efectivo">Efectivo en Caja</option>
+                        <option value="terminal_pos" ${metodoDefecto === 'terminal_pos' ? 'selected' : ''}>Terminal Mercado Pago Point / Tarjeta</option>
                     </select>
                     <label style="color:#b9afa1;">Folio / Autorización (opcional)</label>
                     <input id="swal-auth" type="text" placeholder="Ej. AUTH-9042 o folio SPEI" style="padding:10px;border-radius:8px;border:1px solid #554839;background:#141210;color:#f5efe6;" />
@@ -422,7 +438,12 @@ export default function AdminIndex({
                 ) : (
                     <div id="citas-admin">
                         <ul className="citas">
-                            {citasFiltradas.map((cita) => {
+                            {citasFiltradas
+                                .slice(
+                                    (pagina - 1) * CITAS_POR_PAGINA,
+                                    pagina * CITAS_POR_PAGINA
+                                )
+                                .map((cita) => {
                                 const pago = cita.pago;
                                 const esPendientePos =
                                     pago && pago.estado !== 'pagado';
@@ -565,6 +586,14 @@ export default function AdminIndex({
                                 );
                             })}
                         </ul>
+
+                        <PaginadorLista
+                            total={citasFiltradas.length}
+                            paginaActual={pagina}
+                            porPagina={CITAS_POR_PAGINA}
+                            onCambiarPagina={setPagina}
+                            etiqueta="citas"
+                        />
                     </div>
                 )}
             </div>

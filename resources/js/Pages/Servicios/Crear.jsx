@@ -4,11 +4,13 @@ import Barra from '@/Components/Barra';
 import ServicioFormulario from '@/Components/ServicioFormulario';
 import ServicioController from '@/actions/App/Http/Controllers/ServicioController';
 
-export default function ServiciosCrear() {
+export default function ServiciosCrear({ tipoInicial = 'servicio' }) {
     const { data, setData, post, processing } = useForm({
+        tipo: tipoInicial === 'producto' ? 'producto' : 'servicio',
         nombre: '',
         precio: '',
         duracion_minutos: 30,
+        stock: '',
         descripcion: '',
         activo: true,
         tipos_rostro: [],
@@ -16,6 +18,8 @@ export default function ServiciosCrear() {
         imagen: null,
         eliminar_imagen: false,
     });
+
+    const esProducto = data.tipo === 'producto';
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -26,11 +30,15 @@ export default function ServiciosCrear() {
 
     return (
         <>
-            <Head title="Nuevo Servicio" />
+            <Head title={esProducto ? 'Nuevo Producto' : 'Nuevo Servicio'} />
 
-            <h1 className="nombre-pagina">Nuevo Servicio</h1>
+            <h1 className="nombre-pagina">
+                {esProducto ? 'Nuevo Producto de Barbería' : 'Nuevo Servicio'}
+            </h1>
             <p className="descripcion-pagina">
-                Añade nombre, precio, descripción y foto de referencia del servicio
+                {esProducto
+                    ? 'Añade pomadas, ceras, aceites o productos de cuidado masculino con foto y precio'
+                    : 'Añade nombre, precio, descripción y foto de referencia del servicio'}
             </p>
 
             <Barra />
@@ -41,7 +49,13 @@ export default function ServiciosCrear() {
                 <input
                     type="submit"
                     className="boton"
-                    value={processing ? 'Guardando...' : 'Guardar Servicio'}
+                    value={
+                        processing
+                            ? 'Guardando...'
+                            : esProducto
+                              ? 'Guardar Producto'
+                              : 'Guardar Servicio'
+                    }
                     disabled={processing}
                 />
             </form>

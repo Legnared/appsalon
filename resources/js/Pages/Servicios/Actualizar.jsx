@@ -7,9 +7,11 @@ import ServicioController from '@/actions/App/Http/Controllers/ServicioControlle
 export default function ServiciosActualizar({ servicio }) {
     const { data, setData, post, processing } = useForm({
         id: servicio?.id ?? '',
+        tipo: servicio?.tipo || 'servicio',
         nombre: servicio?.nombre ?? '',
         precio: servicio?.precio ?? '',
         duracion_minutos: servicio?.duracion_minutos ?? 30,
+        stock: servicio?.stock ?? '',
         descripcion: servicio?.descripcion ?? '',
         activo: servicio?.activo ?? true,
         tipos_rostro: Array.isArray(servicio?.tipos_rostro) ? servicio.tipos_rostro : [],
@@ -17,6 +19,8 @@ export default function ServiciosActualizar({ servicio }) {
         imagen: null,
         eliminar_imagen: false,
     });
+
+    const esProducto = data.tipo === 'producto';
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -27,11 +31,13 @@ export default function ServiciosActualizar({ servicio }) {
 
     return (
         <>
-            <Head title="Editar Servicio" />
+            <Head title={esProducto ? 'Editar Producto' : 'Editar Servicio'} />
 
-            <h1 className="nombre-pagina">Editar Servicio</h1>
+            <h1 className="nombre-pagina">
+                {esProducto ? 'Editar Producto' : 'Editar Servicio'}
+            </h1>
             <p className="descripcion-pagina">
-                Modifica los detalles, descripción o fotografía del servicio
+                Modifica los detalles, precio, descripción o fotografía del catálogo
             </p>
 
             <Barra />

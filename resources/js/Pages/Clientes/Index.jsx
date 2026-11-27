@@ -1,8 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Alertas from '@/Components/Alertas';
 import Barra from '@/Components/Barra';
+import PaginadorLista from '@/Components/PaginadorLista';
 import ClienteController from '@/actions/App/Http/Controllers/ClienteController';
+
+const CLIENTES_POR_PAGINA = 8;
 
 export default function ClientesIndex({
     clientes = [],
@@ -10,7 +13,12 @@ export default function ClientesIndex({
     barberoFiltro = 'todos',
 }) {
     const [busqueda, setBusqueda] = useState('');
+    const [pagina, setPagina] = useState(1);
     const [cargando, setCargando] = useState(false);
+
+    useEffect(() => {
+        setPagina(1);
+    }, [busqueda, barberoFiltro]);
 
     const clientesFiltrados = useMemo(() => {
         const q = busqueda.trim().toLowerCase();
@@ -24,6 +32,11 @@ export default function ClientesIndex({
             );
         });
     }, [clientes, busqueda]);
+
+    const clientesPaginados = useMemo(() => {
+        const inicio = (pagina - 1) * CLIENTES_POR_PAGINA;
+        return clientesFiltrados.slice(inicio, inicio + CLIENTES_POR_PAGINA);
+    }, [clientesFiltrados, pagina]);
 
     const filtrarPorBarbero = (nuevoFiltro) => {
         if (String(nuevoFiltro) === String(barberoFiltro)) return;
@@ -107,47 +120,57 @@ export default function ClientesIndex({
                         <p>Registra un nuevo cliente/prospecto o cambia el barbero seleccionado.</p>
                     </div>
                 ) : (
-                    <ul className="servicios">
-                        {clientesFiltrados.map((cliente) => (
-                            <li key={cliente.id}>
-                                <div className="servicio-card-top">
-                                    <p className="servicio-card-nombre">
-                                        {cliente.nombre_completo}
+                    <>
+                        <ul className="servicios">
+                            {clientesPaginados.map((cliente) => (
+                                <li key={cliente.id}>
+                                    <div className="servicio-card-top">
+                                        <p className="servicio-card-nombre">
+                                            {cliente.nombre_completo}
+                                        </p>
+                                        <span
+                                            className={`meta-pill ${cliente.confirmado ? 'pill-activo' : 'pill-oculto'}`}
+                                        >
+                                            {cliente.confirmado ? 'Confirmado' : 'Pendiente'}
+                                        </span>
+                                    </div>
+
+                                    <div className="servicio-meta-badges">
+                                        <span className="meta-pill">
+                                            Barbero: {cliente.barbero_nombre || 'Sin asignar'}
+                                        </span>
+                                        <span className="meta-pill">
+                                            {cliente.citas_count} cita{cliente.citas_count === 1 ? '' : 's'}
+                                        </span>
+                                    </div>
+
+                                    <p className="servicio-card-desc">
+                                        {cliente.email}
+                                        {cliente.telefono ? ` · Tel: ${cliente.telefono}` : ''}
                                     </p>
-                                    <span
-                                        className={`meta-pill ${cliente.confirmado ? 'pill-activo' : 'pill-oculto'}`}
-                                    >
-                                        {cliente.confirmado ? 'Confirmado' : 'Pendiente'}
-                                    </span>
-                                </div>
 
-                                <div className="servicio-meta-badges">
-                                    <span className="meta-pill">
-                                        Barbero: {cliente.barbero_nombre || 'Sin asignar'}
-                                    </span>
-                                    <span className="meta-pill">
-                                        {cliente.citas_count} cita{cliente.citas_count === 1 ? '' : 's'}
-                                    </span>
-                                </div>
+                                    <div className="acciones" style={{ marginTop: '1.4rem', display: 'flex' }}>
+                                        <Link
+                                            className="boton"
+                                            href={ClienteController.showActualizar.url({
+                                                query: { id: cliente.id },
+                                            })}
+                                        >
+                                            Editar / Reasignar Barbero
+                                        </Link>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
 
-                                <p className="servicio-card-desc">
-                                    {cliente.email}
-                                    {cliente.telefono ? ` · Tel: ${cliente.telefono}` : ''}
-                                </p>
-
-                                <div className="acciones" style={{ marginTop: '1.4rem', display: 'flex' }}>
-                                    <Link
-                                        className="boton"
-                                        href={ClienteController.showActualizar.url({
-                                            query: { id: cliente.id },
-                                        })}
-                                    >
-                                        Editar / Reasignar Barbero
-                                    </Link>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                        <PaginadorLista
+                            total={clientesFiltrados.length}
+                            paginaActual={pagina}
+                            porPagina={CLIENTES_POR_PAGINA}
+                            onCambiarPagina={setPagina}
+                            etiqueta="clientes"
+                        />
+                    </>
                 )}
             </div>
         </>
